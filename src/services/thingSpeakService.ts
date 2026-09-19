@@ -328,7 +328,6 @@ export function adaptMultiChannelToSnapshot(
     // Extract historical feeds
     if (history && Array.isArray(history.feeds)) {
       const f1Name = (channelMeta?.field1 || '').toLowerCase();
-      const f2Name = (channelMeta?.field2 || '').toLowerCase();
       const f3Name = (channelMeta?.field3 || '').toLowerCase();
 
       history.feeds.forEach((feed) => {

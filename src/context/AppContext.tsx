@@ -17,6 +17,7 @@ import {
 
 import type {
   RoverState,
+  EnvironmentSnapshot,
   WearableState,
   HazardState,
   Hazard,
@@ -44,6 +45,7 @@ import type {
   WearableLocationUpdatePayload,
   WearableEmergencyPayload,
   SensorSourceStatus,
+  MinerMarkerStatus,
 } from '../types';
 
 import {
@@ -63,7 +65,6 @@ import { startThingSpeakPolling } from '../services/thingSpeakService';
 
 import {
   INITIAL_ROVER_STATE,
-  INITIAL_SENSOR_DATA,
   INITIAL_WEARABLE_STATE,
   INITIAL_HAZARD_STATE,
   INITIAL_ROUTE,
@@ -423,6 +424,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         wearables: {
+          ...state.wearables,
           connectedCount,
           wearables: updatedWearablesList,
         },
@@ -468,6 +470,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         wearables: {
+          ...state.wearables,
           connectedCount,
           wearables: updatedWearablesList,
         },
@@ -487,7 +490,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
           const hasEmergencies = state.wearables.emergencies.some(e => e.wearableId === wearableId && e.status === 'ACTIVE');
           return {
             ...w,
-            status: hasEmergencies ? 'emergency' : 'sos',
+            status: (hasEmergencies ? 'emergency' : 'sos') as Wearable['status'],
             sosTriggered: true,
             location,
             lastHeartbeat: timestamp,
@@ -801,7 +804,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         if (w.id === targetWearableId) {
           return {
             ...w,
-            status: hasOtherEmergencies ? w.status : (w.status === 'disconnected' ? 'disconnected' : 'connected'),
+            status: (hasOtherEmergencies ? w.status : (w.status === 'disconnected' ? 'disconnected' : 'connected')) as Wearable['status'],
             sosTriggered: hasOtherEmergencies ? w.sosTriggered : false,
           };
         }
@@ -815,7 +818,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
           const isOffline = state.wearables.wearables.find(w => w.id === targetWearableId)?.status === 'disconnected';
           return {
             ...l,
-            status: hasOtherEmergencies ? 'emergency' : (isOffline ? 'offline' : 'normal'),
+            status: (hasOtherEmergencies ? 'emergency' : (isOffline ? 'offline' : 'normal')) as MinerMarkerStatus,
             emergency: hasOtherEmergencies,
             lastUpdated: timestamp,
           };

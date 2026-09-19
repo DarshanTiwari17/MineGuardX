@@ -46,6 +46,7 @@
   --accent-blue:    #3b82f6;
   --accent-blue-dark: #1d4ed8;
   --accent-amber:   #f59e0b;
+  --accent-cyan:    #22d3ee;
 
   /* Emergency */
   --emergency-primary:  #dc2626;
@@ -356,6 +357,26 @@ body {
   color: var(--text-primary);
 }
 
+/* Inline link-style action button (used in Command Center widget footers) */
+.btn-link-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-cyan);
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+}
+.btn-link-action:hover {
+  opacity: 0.8;
+  color: #67e8f9;
+}
+
 /* ============================================================
    Sidebar
    ============================================================ */
@@ -507,6 +528,7 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ============================================================
@@ -581,6 +603,7 @@ body {
   flex: 1;
   padding: var(--sp-6);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .page-title {
@@ -907,11 +930,22 @@ body {
 /* ============================================================
    Responsive
    ============================================================ */
+
+/* Large desktops — full 3-col grid works fine above 1400px; 340px side stays */
+
+/* Default 100% zoom window (~1366px) — sidebar=240px → content ~1126px */
 @media (max-width: 1280px) {
   .cc-row-3 {
     grid-template-columns: 1fr 1fr;
   }
   .camera-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Narrow content area — collapse to single column */
+@media (max-width: 1024px) {
+  .cc-row-3 {
     grid-template-columns: 1fr;
   }
 }
@@ -959,6 +993,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);
+  overflow-x: hidden;
 }
 
 .lm-header {
@@ -1006,9 +1041,10 @@ body {
 
 .lm-grid {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: var(--sp-5);
+  grid-template-columns: 1fr 280px;
+  gap: var(--sp-4);
   align-items: start;
+  min-width: 0;
 }
 
 .lm-main-stage {
@@ -1690,7 +1726,7 @@ body {
   width: 100%;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1200px) {
   .lm-grid {
     grid-template-columns: 1fr;
   }
@@ -1704,6 +1740,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);
+  overflow-x: hidden;
 }
 
 .mm-header {
@@ -1742,9 +1779,10 @@ body {
 
 .mm-grid {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: var(--sp-5);
+  grid-template-columns: 1fr 280px;
+  gap: var(--sp-4);
   align-items: start;
+  min-width: 0;
 }
 
 .mm-canvas-stage {
@@ -1816,7 +1854,8 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 10;
-  min-height: 520px;
+  min-height: 360px;
+  max-height: 640px;
   background: #05080c;
   overflow: hidden;
   cursor: grab;
@@ -2256,7 +2295,7 @@ body {
   background: #05080c;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1200px) {
   .mm-grid {
     grid-template-columns: 1fr;
   }

@@ -67,14 +67,22 @@ export async function sendEmergencyStop(): Promise<boolean> {
 
 import type { EnvironmentSnapshot } from '../types/sensors';
 import { getSavedEnvironmentSnapshot } from './environmentBus';
+import { pollThingSpeakOnce } from './thingSpeakService';
 
 /**
- * Fetch latest environmental sensor snapshot.
- * TODO: Replace with GET /api/sensors/environment
+ * Fetch latest environmental sensor snapshot from ThingSpeak Channel 3499946.
  */
 export async function fetchEnvironmentSnapshot(): Promise<EnvironmentSnapshot> {
   const saved = getSavedEnvironmentSnapshot();
-  return saved;
+  if (saved && saved.lastUpdated) {
+    return saved;
+  }
+  // Otherwise trigger an immediate poll to get live ThingSpeak readings
+  try {
+    return await pollThingSpeakOnce();
+  } catch (_) {
+    return saved;
+  }
 }
 
 import { getSavedConnectedWearables } from './wearableBus';

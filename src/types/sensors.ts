@@ -47,20 +47,22 @@ export interface EnvironmentHistory {
 }
 
 export interface SensorData {
-  /** Methane — CH₄ (% LEL or ppm) */
+  /** Methane — CH₄ */
   methane: EnvironmentalReading;
-  /** Carbon monoxide (ppm) */
+  /** Carbon monoxide */
   co: EnvironmentalReading;
-  /** Carbon dioxide (%) */
+  /** Carbon dioxide */
   co2: EnvironmentalReading;
-  /** Hydrogen sulfide (ppm) */
+  /** Hydrogen sulfide */
   h2s: EnvironmentalReading;
-  /** Oxygen level (%) */
+  /** Oxygen level */
   o2: EnvironmentalReading;
-  /** Ambient temperature (°C) */
+  /** Ambient temperature */
   temperature: EnvironmentalReading;
-  /** Relative humidity (%) */
+  /** Relative humidity */
   humidity: EnvironmentalReading;
+  /** Rover Distance monitoring */
+  distance: EnvironmentalReading;
 }
 
 export interface EnvironmentSnapshot {
@@ -68,26 +70,30 @@ export interface EnvironmentSnapshot {
   sensors: EnvironmentalSensor[];
   overallStatus: 'NORMAL' | 'WARNING' | 'HIGH' | 'CRITICAL' | 'UNKNOWN' | 'OFFLINE';
   history: EnvironmentHistory[];
+  dataSource?: string;
+  lastUpdated?: string | null;
 }
 
-const offlineSensor = (unit: string): EnvironmentalReading => ({
+const offlineSensor = (unit: string = 'Sensor value'): EnvironmentalReading => ({
   value: null,
   unit,
   status: 'offline',
-  dataFreshness: 'OFFLINE',
+  dataFreshness: 'UNAVAILABLE',
   timestamp: null,
   thresholdLow: null,
   thresholdHigh: null,
+  source: 'ThingSpeak',
 });
 
 export const INITIAL_SENSOR_DATA: SensorData = {
-  methane: offlineSensor('% LEL'),
-  co: offlineSensor('ppm'),
-  co2: offlineSensor('%'),
-  h2s: offlineSensor('ppm'),
-  o2: offlineSensor('%'),
-  temperature: offlineSensor('°C'),
-  humidity: offlineSensor('%'),
+  methane: offlineSensor(''),
+  co: offlineSensor(''),
+  co2: offlineSensor(''),
+  h2s: offlineSensor(''),
+  o2: offlineSensor(''),
+  temperature: offlineSensor(''),
+  humidity: offlineSensor(''),
+  distance: offlineSensor(''),
 };
 
 export const INITIAL_ENVIRONMENT_SNAPSHOT: EnvironmentSnapshot = {
@@ -95,4 +101,7 @@ export const INITIAL_ENVIRONMENT_SNAPSHOT: EnvironmentSnapshot = {
   sensors: [],
   overallStatus: 'UNKNOWN',
   history: [],
+  dataSource: 'ThingSpeak',
+  lastUpdated: null,
 };
+

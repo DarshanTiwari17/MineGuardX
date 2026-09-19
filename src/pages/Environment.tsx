@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Wind, Thermometer, Droplets, Activity, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import React from 'react';
+import { Thermometer, Droplets, Activity, AlertTriangle, CheckCircle2, XCircle, Clock, Navigation } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import StatusBadge from '../components/shared/StatusBadge';
 import type { EnvironmentalReading, SensorStatus } from '../types';
@@ -16,6 +16,7 @@ export default function Environment() {
         return 'var(--success-color)';
       case 'warning':
       case 'WARNING':
+      case 'stale':
         return 'var(--warning-color)';
       case 'critical':
       case 'CRITICAL':
@@ -32,6 +33,7 @@ export default function Environment() {
         return <CheckCircle2 size={16} color="var(--success-color)" />;
       case 'warning':
       case 'WARNING':
+      case 'stale':
         return <AlertTriangle size={16} color="var(--warning-color)" />;
       case 'critical':
       case 'CRITICAL':
@@ -41,30 +43,141 @@ export default function Environment() {
     }
   };
 
-  const renderGasCard = (name: string, formula: string, reading: EnvironmentalReading) => (
-    <div className="status-card">
-      <div className="card-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {getStatusIcon(reading.status)}
-          <h3 style={{ margin: 0 }}>{name} <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formula}</span></h3>
+  /**
+   * Render a gas sensor card ONLY if valid numeric data exists.
+   * Hides the card completely (returns null) when value is null/undefined.
+   */
+  const renderGasCard = (name: string, formula: string, reading: EnvironmentalReading) => {
+    if (reading?.value === null || reading?.value === undefined || isNaN(reading.value)) {
+      return null;
+    }
+
+    const displayValue = reading.value.toString();
+
+    return (
+      <div className="status-card">
+        <div className="card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {getStatusIcon(reading.status)}
+            <h3 style={{ margin: 0 }}>
+              {name}{' '}
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {formula}
+              </span>
+            </h3>
+          </div>
+          <StatusBadge
+            variant={
+              reading.status === 'ok'
+                ? 'connected'
+                : reading.status === 'warning'
+                ? 'warning'
+                : 'critical'
+            }
+            label={reading.status.toUpperCase()}
+            showDot={false}
+          />
         </div>
-        <StatusBadge 
-          variant={reading.value === null ? 'unavailable' : reading.status === 'ok' ? 'connected' : reading.status === 'warning' ? 'warning' : 'critical'} 
-          label={reading.value === null ? 'Offline' : reading.status.toUpperCase()} 
-          showDot={false} 
-        />
+        <div className="card-body">
+          <div
+            style={{
+              fontSize: '32px',
+              fontWeight: 'bold',
+              color: getStatusColor(reading.status),
+              marginBottom: '8px',
+            }}
+          >
+            {displayValue}{' '}
+            {reading.unit && (
+              <span style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+                {reading.unit}
+              </span>
+            )}
+          </div>
+          <div
+            style={{
+              fontSize: '12px',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              justify: 'space-between',
+            }}
+          >
+            <span>Freshness: {reading.dataFreshness || 'LIVE'}</span>
+            <span>
+              {reading.timestamp
+                ? new Date(reading.timestamp).toLocaleTimeString()
+                : 'No data'}
+            </span>
+          </div>
+        </div>
       </div>
-      <div className="card-body">
-        <div style={{ fontSize: '32px', fontWeight: 'bold', color: getStatusColor(reading.status), marginBottom: '8px' }}>
-          {reading.value !== null ? reading.value : '—'} <span style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>{reading.unit}</span>
+    );
+  };
+
+  /**
+   * Render an atmospheric/metric card ONLY if valid numeric data exists.
+   */
+  const renderMetricCard = (
+    name: string,
+    icon: React.ReactNode,
+    reading: EnvironmentalReading
+  ) => {
+    if (reading?.value === null || reading?.value === undefined || isNaN(reading.value)) {
+      return null;
+    }
+
+    return (
+      <div className="status-card">
+        <div className="card-header">
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {icon} {name}
+          </h3>
+          <StatusBadge
+            variant={reading.status === 'ok' ? 'connected' : 'warning'}
+            label={reading.status.toUpperCase()}
+          />
         </div>
-        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-          <span>Freshness: {reading.dataFreshness}</span>
-          <span>{reading.timestamp ? new Date(reading.timestamp).toLocaleTimeString() : 'No data'}</span>
+        <div className="card-body">
+          <div
+            style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              color: getStatusColor(reading.status),
+              marginBottom: '8px',
+            }}
+          >
+            {reading.value}{' '}
+            {reading.unit && (
+              <span style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+                {reading.unit}
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            Freshness: {reading.dataFreshness || 'LIVE'}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  // Count active gas cards and top metric cards
+  const gasCards = [
+    renderGasCard('MQ-4 Methane', 'CH₄', readings.methane),
+    renderGasCard('MQ-7 Carbon Monoxide', 'CO', readings.co),
+    renderGasCard('Carbon Dioxide', 'CO₂', readings.co2),
+    renderGasCard('Hydrogen Sulfide', 'H₂S', readings.h2s),
+    renderGasCard('Oxygen', 'O₂', readings.o2),
+  ].filter(Boolean);
+
+  const metricCards = [
+    renderMetricCard('Distance', <Navigation size={18} />, readings.distance),
+    renderMetricCard('Humidity', <Droplets size={18} />, readings.humidity),
+    renderMetricCard('Temperature', <Thermometer size={18} />, readings.temperature),
+  ].filter(Boolean);
+
+  // Filter active sensors with real communication / readings
+  const activeSensors = sensors.filter((s) => s.status !== 'DISCONNECTED');
 
   return (
     <div className="fade-in" aria-label="Environment dashboard">
@@ -86,56 +199,30 @@ export default function Environment() {
             </div>
             {overallStatus === 'UNKNOWN' && (
               <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '8px' }}>
-                Insufficient data to determine overall status. Check sensor connectivity.
+                Waiting for live sensor data stream. Check sensor connectivity.
               </p>
             )}
           </div>
         </div>
-        
-        <div className="cc-row-2">
-          <div className="status-card">
-            <div className="card-header">
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Thermometer size={18} /> Temperature
-              </h3>
-              <StatusBadge 
-                variant={readings.temperature.status === 'ok' ? 'connected' : readings.temperature.status === 'warning' ? 'warning' : readings.temperature.status === 'critical' ? 'critical' : 'unavailable'} 
-                label={readings.temperature.status.toUpperCase()} 
-              />
-            </div>
-            <div className="card-body">
-              <div style={{ fontSize: '28px', fontWeight: 'bold', color: getStatusColor(readings.temperature.status), marginBottom: '8px' }}>
-                {readings.temperature.value !== null ? readings.temperature.value : '—'} <span style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>{readings.temperature.unit}</span>
-              </div>
-            </div>
+
+        {metricCards.length > 0 && (
+          <div className="cc-row-2">
+            {metricCards}
           </div>
-          
-          <div className="status-card">
-            <div className="card-header">
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Droplets size={18} /> Humidity
-              </h3>
-              <StatusBadge 
-                variant={readings.humidity.status === 'ok' ? 'connected' : readings.humidity.status === 'warning' ? 'warning' : readings.humidity.status === 'critical' ? 'critical' : 'unavailable'} 
-                label={readings.humidity.status.toUpperCase()} 
-              />
-            </div>
-            <div className="card-body">
-              <div style={{ fontSize: '28px', fontWeight: 'bold', color: getStatusColor(readings.humidity.status), marginBottom: '8px' }}>
-                {readings.humidity.value !== null ? readings.humidity.value : '—'} <span style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>{readings.humidity.unit}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      <h2 style={{ fontSize: '18px', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>Gas Sensors</h2>
+      <h2 style={{ fontSize: '18px', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+        Gas Sensors
+      </h2>
       <div className="cc-row-3" style={{ marginBottom: '24px' }}>
-        {renderGasCard('Methane', 'CH₄', readings.methane)}
-        {renderGasCard('Carbon Monoxide', 'CO', readings.co)}
-        {renderGasCard('Carbon Dioxide', 'CO₂', readings.co2)}
-        {renderGasCard('Hydrogen Sulfide', 'H₂S', readings.h2s)}
-        {renderGasCard('Oxygen', 'O₂', readings.o2)}
+        {gasCards.length > 0 ? (
+          gasCards
+        ) : (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '24px 0', color: 'var(--text-disabled)', fontSize: '14px' }}>
+            No live gas sensor data streaming
+          </div>
+        )}
       </div>
 
       <div className="cc-row-2">
@@ -144,9 +231,9 @@ export default function Environment() {
             <h3 style={{ margin: 0 }}>Sensor Health</h3>
           </div>
           <div className="card-body">
-            {sensors.length === 0 ? (
+            {activeSensors.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-secondary)' }}>
-                No environmental sensors connected
+                No active environmental sensors streaming
               </div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -159,14 +246,20 @@ export default function Environment() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sensors.map((sensor) => (
+                  {activeSensors.map((sensor) => (
                     <tr key={sensor.sensorId} style={{ borderBottom: '1px solid var(--border-dark)' }}>
                       <td style={{ padding: '8px' }}>{sensor.sensorId}</td>
                       <td style={{ padding: '8px' }}>{sensor.sensorType}</td>
                       <td style={{ padding: '8px' }}>
-                        <StatusBadge 
-                          variant={sensor.status === 'CONNECTED' ? 'connected' : sensor.status === 'STALE' ? 'warning' : 'unavailable'} 
-                          label={sensor.status} 
+                        <StatusBadge
+                          variant={
+                            sensor.status === 'CONNECTED'
+                              ? 'connected'
+                              : sensor.status === 'STALE'
+                              ? 'warning'
+                              : 'unavailable'
+                          }
+                          label={sensor.status}
                         />
                       </td>
                       <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>

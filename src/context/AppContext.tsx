@@ -59,6 +59,7 @@ import {
 } from '../services/hazardBus';
 
 import { subscribeEnvironmentEvents } from '../services/environmentBus';
+import { startThingSpeakPolling } from '../services/thingSpeakService';
 
 import {
   INITIAL_ROVER_STATE,
@@ -1150,14 +1151,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // Listen for real-time environmental updates
+  // Listen for real-time environmental updates & start ThingSpeak polling
   useEffect(() => {
-    const unsubscribe = subscribeEnvironmentEvents((event) => {
+    const stopPolling = startThingSpeakPolling();
+    const unsubscribeBus = subscribeEnvironmentEvents((event) => {
       if (event.type === 'ENVIRONMENT_UPDATE') {
         dispatch({ type: 'ENVIRONMENT_UPDATE', payload: event.payload });
       }
     });
-    return () => unsubscribe();
+    return () => {
+      stopPolling();
+      unsubscribeBus();
+    };
   }, []);
 
   return (

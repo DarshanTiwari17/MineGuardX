@@ -120,7 +120,7 @@ export default function HazardPanel({ hazards }: HazardPanelProps) {
 
       <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
         <Link
-          to="/hazards"
+          to="/hazard-center"
           className="btn-link-action"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',

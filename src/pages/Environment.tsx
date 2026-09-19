@@ -99,7 +99,7 @@ export default function Environment() {
               fontSize: '12px',
               color: 'var(--text-secondary)',
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
             }}
           >
             <span>Freshness: {reading.dataFreshness || 'LIVE'}</span>

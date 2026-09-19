@@ -10,7 +10,6 @@ import type {
   WearableLocation,
   WearableMotionStatus,
   WearableVitals,
-  WearableEmergencyPayload,
   EmergencyType,
   EmergencySeverity,
 } from '../types/wearable';

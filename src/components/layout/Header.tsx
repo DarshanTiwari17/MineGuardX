@@ -1,11 +1,23 @@
-import { User, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Bell, Moon, Sun } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import LiveClock from '../shared/LiveClock';
 import StatusBadge from '../shared/StatusBadge';
 
 export default function Header() {
-  const { state } = useAppContext();
+  const { state, demoMode, toggleDemoMode } = useAppContext();
   const { mission, alerts, rover } = state;
+
+  const [theme, setTheme] = useState('light');
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   const missionStatusLabel =
     mission.status === 'no_mission' ? 'No Active Mission' :
@@ -28,58 +40,67 @@ export default function Header() {
 
   return (
     <header className="app-header" role="banner">
-      {/* Left: Title */}
-      <div className="header-title">Mine Rescue Control</div>
-      <div className="header-divider" aria-hidden="true" />
+      <div className="header-brand">
+        <span className="header-brand-dot" aria-hidden="true" />
+        <span className="header-brand-name">MineGuardX</span>
+        <span className="header-brand-badge">Rescue-OS</span>
+      </div>
 
-      {/* Mission status */}
       <StatusBadge variant={missionBadgeVariant} label={missionStatusLabel} />
 
-      {/* Rover connection */}
       <StatusBadge
         variant={roverBadgeVariant}
         label={`Rover: ${rover.connectionStatus === 'connected' ? 'Connected' : rover.connectionStatus === 'connecting' ? 'Connecting…' : 'Disconnected'}`}
       />
 
-      {/* Spacer */}
       <div className="header-spacer" />
 
-      {/* Active alerts */}
       {alerts.activeCount > 0 ? (
         <button
-          className="btn btn-ghost"
-          style={{ gap: '6px', padding: '6px 10px', color: 'var(--color-critical)', borderColor: 'rgba(239,68,68,0.3)' }}
+          className="btn btn-ghost header-icon-btn"
           title={`${alerts.activeCount} active alert(s)`}
           aria-label={`${alerts.activeCount} active alerts`}
         >
-          <Bell size={14} />
-          <span style={{ fontSize: '12px', fontWeight: 700 }}>{alerts.activeCount}</span>
+          <Bell size={16} />
+          <span className="header-alert-count">{alerts.activeCount}</span>
         </button>
       ) : (
         <button
-          className="btn btn-ghost"
-          style={{ gap: '6px', padding: '6px 10px' }}
+          className="btn btn-ghost header-icon-btn"
           title="No active alerts"
           aria-label="No active alerts"
         >
-          <Bell size={14} />
-          <span style={{ fontSize: '12px' }}>0</span>
+          <Bell size={16} />
         </button>
       )}
 
-      {/* Clock */}
       <div className="header-clock" aria-live="polite" aria-label="Current time">
         <LiveClock />
       </div>
 
-      <div className="header-divider" aria-hidden="true" />
+      <button
+        className="btn btn-ghost header-icon-btn"
+        onClick={toggleTheme}
+        aria-label="Toggle theme"
+      >
+        {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+      </button>
 
-      {/* Operator */}
-      <div className="header-operator">
+      <button
+        type="button"
+        className="header-operator"
+        onClick={toggleDemoMode}
+        title={demoMode ? 'Sign out of demo view' : 'Sign in to show demo data'}
+        aria-label={demoMode ? 'Sign out' : 'Sign in'}
+        aria-pressed={demoMode}
+      >
         <User size={14} color="var(--text-muted)" aria-hidden="true" />
         <span className="header-operator-name">Operator</span>
-        <StatusBadge variant="unavailable" label="Not signed in" />
-      </div>
+        <StatusBadge
+          variant={demoMode ? 'connected' : 'unavailable'}
+          label={demoMode ? 'Signed in' : 'Not signed in'}
+        />
+      </button>
     </header>
   );
 }

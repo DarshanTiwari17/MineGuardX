@@ -331,7 +331,7 @@ export function MobileWearable() {
           <div className="mobile-body pairing-view">
             <div className="pairing-hero">
               <div className="pairing-icon-box">
-                <Shield size={32} className="text-cyan" />
+                <Shield size={32} />
               </div>
               <h2>Wearable Device Setup</h2>
               <p className="pairing-desc">
@@ -342,9 +342,9 @@ export function MobileWearable() {
             {/* Device Identity */}
             <div className="scan-trigger-box">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: '8px' }}>
-                <Wifi size={16} className="text-cyan" />
+                <Wifi size={16} />
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Device ID:</span>
-                <span className="font-mono" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-cyan, #00d4ff)' }}>{wearableId}</span>
+                <span className="font-mono" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{wearableId}</span>
               </div>
             </div>
 
@@ -505,7 +505,7 @@ export function MobileWearable() {
                 <button type="button" className="btn-motion" onClick={() => triggerHazard('HIGH_TEMPERATURE')}>High Temp</button>
                 <button type="button" className="btn-motion" onClick={() => triggerHazard('STRUCTURAL_OBSTRUCTION')}>Obstruction</button>
                 <button type="button" className="btn-motion btn-fall" onClick={() => triggerHazard('ROCKFALL')}>Rockfall</button>
-                <button type="button" className="btn-motion" style={{ background: 'rgba(56,189,248,0.1)', borderColor: 'rgba(56,189,248,0.3)', color: '#38bdf8' }} onClick={() => triggerHazard('FLOODING')}>Flooding</button>
+                <button type="button" className="btn-motion" onClick={() => triggerHazard('FLOODING')}>Flooding</button>
               </div>
               <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px' }}>
                 Dispatches real hazard events to the dashboard event bus.
@@ -514,7 +514,7 @@ export function MobileWearable() {
 
             {/* Environment Simulation Panel */}
             <div className="motion-control-card" style={{ marginTop: '1rem', borderColor: 'rgba(59,130,246,0.3)' }}>
-              <div className="section-label" style={{ color: '#3b82f6' }}>
+              <div className="section-label">
                 <Wind size={14} />
                 <span>Simulate Environment Telemetry</span>
               </div>
@@ -529,7 +529,7 @@ export function MobileWearable() {
             {/* Spatial Location Simulator */}
             <div className="location-control-card">
               <div className="section-label">
-                <MapPin size={14} className="text-cyan" />
+                <MapPin size={14} />
                 <span>Simulated Mine Positioning</span>
               </div>
 

@@ -13,6 +13,7 @@ import type {
   EmergencyType,
   EmergencySeverity,
 } from '../types/wearable';
+import { io, Socket } from 'socket.io-client';
 
 const CHANNEL_NAME = 'mineguardx_wearable_bus';
 const STORAGE_EVENT_KEY = 'mineguardx_last_wearable_event';
@@ -29,6 +30,16 @@ try {
 } catch {
   // Fallback to storage events
   broadcastChannel = null;
+}
+
+// 3. Socket.IO for cross-device network sync
+let socket: Socket | null = null;
+try {
+  if (typeof window !== 'undefined') {
+    socket = io(); // Connects to the same host/port serving the page
+  }
+} catch {
+  socket = null;
 }
 
 /**
@@ -79,10 +90,10 @@ export function getDeviceWearableId(): string | null {
 }
 
 /**
- * Broadcast an event to all open tabs / windows
+ * Broadcast an event to all open tabs / windows AND over the network
  */
 export function publishWearableEvent(event: WearableBusEvent): void {
-  // 1. BroadcastChannel
+  // 1. BroadcastChannel (local browser tabs)
   if (broadcastChannel) {
     try {
       broadcastChannel.postMessage(event);
@@ -100,10 +111,19 @@ export function publishWearableEvent(event: WearableBusEvent): void {
   } catch {
     // ignore
   }
+
+  // 3. Socket.IO (cross-device over network)
+  if (socket && socket.connected) {
+    try {
+      socket.emit('wearable_bus_event', event);
+    } catch {
+      // ignore
+    }
+  }
 }
 
 /**
- * Subscribe to wearable bus events from other tabs
+ * Subscribe to wearable bus events from other tabs or devices
  */
 export function subscribeWearableEvents(
   callback: (event: WearableBusEvent) => void
@@ -127,11 +147,20 @@ export function subscribeWearableEvents(
     }
   };
 
+  const handleSocketMessage = (data: any) => {
+    if (data && data.type) {
+      callback(data as WearableBusEvent);
+    }
+  };
+
   if (broadcastChannel) {
     broadcastChannel.addEventListener('message', handleBcMessage);
   }
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', handleStorage);
+  }
+  if (socket) {
+    socket.on('wearable_bus_event', handleSocketMessage);
   }
 
   return () => {
@@ -140,6 +169,9 @@ export function subscribeWearableEvents(
     }
     if (typeof window !== 'undefined') {
       window.removeEventListener('storage', handleStorage);
+    }
+    if (socket) {
+      socket.off('wearable_bus_event', handleSocketMessage);
     }
   };
 }

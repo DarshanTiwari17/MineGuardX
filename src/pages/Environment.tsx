@@ -55,7 +55,7 @@ export default function Environment() {
     const displayValue = reading.value.toString();
 
     return (
-      <div className="status-card">
+      <div className="env-gas-item">
         <div className="card-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {getStatusIcon(reading.status)}
@@ -80,16 +80,15 @@ export default function Environment() {
         </div>
         <div className="card-body">
           <div
+            className="stat-counter"
             style={{
-              fontSize: '32px',
-              fontWeight: 'bold',
               color: getStatusColor(reading.status),
               marginBottom: '8px',
             }}
           >
             {displayValue}{' '}
             {reading.unit && (
-              <span style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+              <span className="stat-unit">
                 {reading.unit}
               </span>
             )}
@@ -139,16 +138,15 @@ export default function Environment() {
         </div>
         <div className="card-body">
           <div
+            className="stat-counter"
             style={{
-              fontSize: '28px',
-              fontWeight: 'bold',
               color: getStatusColor(reading.status),
               marginBottom: '8px',
             }}
           >
             {reading.value}{' '}
             {reading.unit && (
-              <span style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+              <span className="stat-unit">
                 {reading.unit}
               </span>
             )}
@@ -181,20 +179,22 @@ export default function Environment() {
 
   return (
     <div className="fade-in" aria-label="Environment dashboard">
-      <div style={{ marginBottom: '24px' }}>
-        <h1 className="page-title">Environmental Monitoring</h1>
-        <p className="page-sub">Live telemetry for gas, temperature, and atmospheric conditions</p>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Environmental Monitoring</h1>
+          <p className="page-sub">Live telemetry for gas, temperature, and atmospheric conditions</p>
+        </div>
       </div>
 
       <div className="cc-row-2" style={{ marginBottom: '24px' }}>
-        <div className="status-card" style={{ borderLeft: `4px solid ${getStatusColor(overallStatus)}` }}>
+        <div className="status-card env-hero">
           <div className="card-header">
-            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 className="label-caps" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Activity size={18} /> Overall Environmental Status
             </h3>
           </div>
           <div className="card-body">
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: getStatusColor(overallStatus) }}>
+            <div className="stat-counter" style={{ color: getStatusColor(overallStatus) }}>
               {overallStatus}
             </div>
             {overallStatus === 'UNKNOWN' && (
@@ -212,10 +212,10 @@ export default function Environment() {
         )}
       </div>
 
-      <h2 style={{ fontSize: '18px', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+      <h2 className="label-caps" style={{ marginBottom: '16px' }}>
         Gas Sensors
       </h2>
-      <div className="cc-row-3" style={{ marginBottom: '24px' }}>
+      <div className="env-gas-band" style={{ marginBottom: '24px' }}>
         {gasCards.length > 0 ? (
           gasCards
         ) : (
@@ -236,13 +236,13 @@ export default function Environment() {
                 No active environmental sensors streaming
               </div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <table className="data-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
-                    <th style={{ padding: '8px' }}>ID</th>
-                    <th style={{ padding: '8px' }}>Type</th>
-                    <th style={{ padding: '8px' }}>Status</th>
-                    <th style={{ padding: '8px' }}>Last Comm</th>
+                  <tr>
+                    <th>ID</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Last Comm</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -284,13 +284,13 @@ export default function Environment() {
               </div>
             ) : (
               <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <table className="data-table">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
-                      <th style={{ padding: '8px' }}>Time</th>
-                      <th style={{ padding: '8px' }}>Parameter</th>
-                      <th style={{ padding: '8px' }}>Value</th>
-                      <th style={{ padding: '8px' }}>Status</th>
+                    <tr>
+                      <th>Time</th>
+                      <th>Parameter</th>
+                      <th>Value</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>

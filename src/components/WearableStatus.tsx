@@ -144,7 +144,7 @@ export default function WearableStatus({ wearables }: WearableStatusProps) {
             alignItems: 'center',
             gap: '6px',
             fontSize: '12px',
-            color: 'var(--accent-cyan)',
+            color: 'var(--text-primary)',
             textDecoration: 'none',
             fontWeight: 500,
           }}

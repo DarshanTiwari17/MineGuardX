@@ -11,6 +11,9 @@ import {
   useContext,
   useReducer,
   useEffect,
+  useState,
+  useMemo,
+  useCallback,
   type ReactNode,
   type Dispatch,
 } from 'react';
@@ -62,6 +65,7 @@ import {
 
 import { subscribeEnvironmentEvents } from '../services/environmentBus';
 import { startThingSpeakPolling } from '../services/thingSpeakService';
+import { applyDemoOverlay } from '../demo/demoOverlay';
 
 import {
   INITIAL_ROVER_STATE,
@@ -1023,12 +1027,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
 interface AppContextValue {
   state: AppState;
   dispatch: Dispatch<AppAction>;
+  demoMode: boolean;
+  toggleDemoMode: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, INITIAL_APP_STATE);
+  const [demoMode, setDemoMode] = useState(false);
+  const toggleDemoMode = useCallback(() => setDemoMode((on) => !on), []);
+  const displayedState = useMemo(
+    () => (demoMode ? applyDemoOverlay(state) : state),
+    [demoMode, state],
+  );
 
   // Initial data load — currently returns disconnected states from stubs.
   // TODO: After initial load, connect WebSocket for live updates.
@@ -1169,7 +1181,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{ state: displayedState, dispatch, demoMode, toggleDemoMode }}>
       {children}
     </AppContext.Provider>
   );

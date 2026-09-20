@@ -4,7 +4,7 @@
 // when no mine layout vectors or telemetry packets are loaded.
 // ============================================================
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Compass,
   MapPinOff,
@@ -12,6 +12,7 @@ import {
   Crosshair,
   Wind,
 } from 'lucide-react';
+import MineSurveyPlan from './MineSurveyPlan';
 import type { MineMapState, MapObjectType, EnvironmentSnapshot } from '../../types';
 
 interface MineMapCanvasProps {
@@ -31,6 +32,7 @@ export default function MineMapCanvas({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const {
     connected,
@@ -47,6 +49,7 @@ export default function MineMapCanvas({
   } = mapState;
 
   const hasData = connected && (tunnels.length > 0 || minerLocations.length > 0 || rover.position !== null);
+  const showSurveyInk = hasData && mapState.mineName === 'West Vein Survey';
 
   function handleMouseDown(e: React.MouseEvent) {
     setIsDragging(true);
@@ -65,19 +68,28 @@ export default function MineMapCanvas({
     setIsDragging(false);
   }
 
-  function handleWheel(e: React.WheelEvent) {
-    e.preventDefault();
-    const factor = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom((z) => Math.min(Math.max(z * factor, 0.5), 3));
-  }
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const factor = event.deltaY > 0 ? 0.9 : 1.1;
+      setZoom((z) => Math.min(Math.max(z * factor, 0.5), 3));
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
 
   return (
     <div
-      className={`mine-map-canvas-container ${compact ? 'compact' : ''}`}
+      ref={containerRef}
+      className={`mine-map-canvas-container ${compact ? 'compact' : ''} ${showSurveyInk ? 'survey-ink' : ''}`}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onWheel={handleWheel}
+      onMouseLeave={handleMouseUp}
       role="region"
       aria-label="Underground Mine Map Spatial Viewport"
       tabIndex={0}
@@ -111,7 +123,7 @@ export default function MineMapCanvas({
             <path
               d="M 50 0 L 0 0 0 50"
               fill="none"
-              stroke="rgba(59, 130, 246, 0.07)"
+              stroke={showSurveyInk ? 'rgba(40,38,34,0.08)' : 'rgba(59, 130, 246, 0.07)'}
               strokeWidth="1"
             />
           </pattern>
@@ -128,60 +140,40 @@ export default function MineMapCanvas({
               y1="0"
               x2="0"
               y2="10"
-              stroke="rgba(239, 68, 68, 0.4)"
+              stroke="rgba(50, 48, 44, 0.45)"
               strokeWidth="2"
             />
           </pattern>
         </defs>
 
-        {/* Tactical Grid Background */}
         <rect
           x="-1000"
           y="-1000"
           width="2000"
           height="2000"
-          fill="url(#mine-grid-pattern)"
+          fill={showSurveyInk ? '#e4dfd4' : 'url(#mine-grid-pattern)'}
         />
 
-        {/* Origin Axes */}
-        <line
-          x1="-450"
-          y1="0"
-          x2="450"
-          y2="0"
-          stroke="rgba(59, 130, 246, 0.15)"
-          strokeWidth="1"
-          strokeDasharray="4 4"
-        />
-        <line
-          x1="0"
-          y1="-300"
-          x2="0"
-          y2="300"
-          stroke="rgba(59, 130, 246, 0.15)"
-          strokeWidth="1"
-          strokeDasharray="4 4"
-        />
-
-        {/* Origin Crosshair */}
-        <circle cx="0" cy="0" r="3" fill="rgba(59, 130, 246, 0.4)" />
-        <text
-          x="6"
-          y="14"
-          fill="rgba(255, 255, 255, 0.2)"
-          fontSize="9"
-          fontFamily="monospace"
-        >
-          [0,0] SHAFT 1
-        </text>
+        {!showSurveyInk && (
+          <>
+            <line x1="-450" y1="0" x2="450" y2="0" stroke="rgba(59, 130, 246, 0.15)" strokeWidth="1" strokeDasharray="4 4" />
+            <line x1="0" y1="-300" x2="0" y2="300" stroke="rgba(59, 130, 246, 0.15)" strokeWidth="1" strokeDasharray="4 4" />
+            <circle cx="0" cy="0" r="3" fill="rgba(59, 130, 246, 0.4)" />
+            <text x="6" y="14" fill="rgba(255, 255, 255, 0.2)" fontSize="9" fontFamily="monospace">
+              [0,0] SHAFT 1
+            </text>
+          </>
+        )}
 
         {/* ── Layer Rendering Pipeline (When real spatial data is loaded) ── */}
         <g
           transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}
           className="mine-spatial-layers"
         >
-          {/* 1. Mine Tunnels */}
-          {layerVisibility.layout &&
+          {showSurveyInk && <MineSurveyPlan />}
+
+          {/* 1. Mine Tunnels — survey ink replaces simple vectors */}
+          {!showSurveyInk && layerVisibility.layout &&
             tunnels.map((tunnel) => (
               <line
                 key={tunnel.id}
@@ -228,9 +220,9 @@ export default function MineMapCanvas({
             <polyline
               points={roverPath.points.map((p) => `${p.x},${p.y}`).join(' ')}
               fill="none"
-              stroke="var(--color-info)"
-              strokeWidth="2"
-              strokeDasharray="4 2"
+              stroke={showSurveyInk ? '#3a3834' : 'var(--color-info)'}
+              strokeWidth="1.5"
+              strokeDasharray="3 4"
               className="rover-path-line"
             />
           )}
@@ -240,9 +232,9 @@ export default function MineMapCanvas({
             <polyline
               points={rescueRoute.waypoints.map((w) => `${w.x},${w.y}`).join(' ')}
               fill="none"
-              stroke="var(--color-connected)"
-              strokeWidth="3"
-              strokeDasharray="6 3"
+              stroke={showSurveyInk ? '#2c2a27' : 'var(--color-connected)'}
+              strokeWidth="2"
+              strokeDasharray="5 4"
               className="rescue-route-line"
             />
           )}
@@ -258,11 +250,11 @@ export default function MineMapCanvas({
               >
                 <circle
                   r="8"
-                  fill="rgba(168, 85, 247, 0.2)"
-                  stroke="#a855f7"
+                  fill="rgba(44, 42, 39, 0.12)"
+                  stroke={showSurveyInk ? '#2c2a27' : '#a855f7'}
                   strokeWidth="1.5"
                 />
-                <circle r="3" fill="#a855f7" />
+                <circle r="3" fill={showSurveyInk ? '#2c2a27' : '#a855f7'} />
               </g>
             ))}
 
@@ -272,8 +264,12 @@ export default function MineMapCanvas({
               const isFire = ['FIRE', 'SMOKE', 'THERMAL_ANOMALY'].includes(h.type);
               const isGas = ['METHANE', 'CO', 'CO2', 'H2S', 'LOW_OXYGEN'].includes(h.type);
               const isFlood = h.type === 'FLOODING';
-              const hazardColor = isFire ? '#ef4444' : isGas ? '#f97316' : isFlood ? '#38bdf8' : 'var(--color-warning)';
-              const hazardFill = isFire ? 'rgba(239,68,68,0.18)' : isGas ? 'rgba(249,115,22,0.15)' : isFlood ? 'rgba(56,189,248,0.15)' : 'rgba(245,158,11,0.15)';
+              const hazardColor = showSurveyInk
+                ? (h.severity === 'critical' || h.severity === 'high' ? '#5a1f1f' : '#3a3834')
+                : isFire ? '#ef4444' : isGas ? '#f97316' : isFlood ? '#38bdf8' : 'var(--color-warning)';
+              const hazardFill = showSurveyInk
+                ? 'rgba(44,42,39,0.12)'
+                : isFire ? 'rgba(239,68,68,0.18)' : isGas ? 'rgba(249,115,22,0.15)' : isFlood ? 'rgba(56,189,248,0.15)' : 'rgba(245,158,11,0.15)';
 
               return (
                 <g
@@ -300,8 +296,8 @@ export default function MineMapCanvas({
                 transform={`translate(${sensor.location.x}, ${sensor.location.y})`}
                 className="map-interactive-item"
               >
-                <circle r="12" fill="var(--bg-card)" stroke="var(--color-info)" strokeWidth="1.5" />
-                <Wind size={12} color="var(--color-info)" style={{ transform: 'translate(-6px, -6px)' }} />
+                <circle r="12" fill={showSurveyInk ? '#d6d0c6' : 'var(--bg-card)'} stroke={showSurveyInk ? '#2c2a27' : 'var(--color-info)'} strokeWidth="1.5" />
+                <Wind size={12} color={showSurveyInk ? '#2c2a27' : 'var(--color-info)'} style={{ transform: 'translate(-6px, -6px)' }} />
               </g>
             );
           })}
@@ -312,7 +308,9 @@ export default function MineMapCanvas({
               if (!miner.position) return null;
               const isSelected = selectedObjectId === miner.wearableId;
               const color = miner.emergency
-                ? 'var(--color-critical)'
+                ? '#6b1d1d'
+                : showSurveyInk
+                ? '#2c2a27'
                 : miner.status === 'normal'
                 ? 'var(--color-connected)'
                 : miner.isStale
@@ -349,9 +347,9 @@ export default function MineMapCanvas({
                   <text
                     x="9"
                     y="4"
-                    fill="#fff"
+                    fill={showSurveyInk ? '#2c2a27' : '#fff'}
                     fontSize="9"
-                    fontFamily="monospace"
+                    fontFamily="Georgia, serif"
                   >
                     {miner.minerName || miner.wearableId}
                   </text>
@@ -368,8 +366,8 @@ export default function MineMapCanvas({
             >
               <circle
                 r="10"
-                fill="rgba(59, 130, 246, 0.25)"
-                stroke="var(--color-info)"
+                fill={showSurveyInk ? 'rgba(44,42,39,0.14)' : 'rgba(59, 130, 246, 0.25)'}
+                stroke={showSurveyInk ? '#1f1e1c' : 'var(--color-info)'}
                 strokeWidth="2"
               />
               <g
@@ -377,8 +375,8 @@ export default function MineMapCanvas({
               >
                 <Navigation2
                   size={12}
-                  color="var(--color-info)"
-                  fill="var(--color-info)"
+                  color={showSurveyInk ? '#1f1e1c' : 'var(--color-info)'}
+                  fill={showSurveyInk ? '#1f1e1c' : 'var(--color-info)'}
                 />
               </g>
             </g>

@@ -163,7 +163,7 @@ export function WearableCard({ wearable }: WearableCardProps) {
       {/* Spatial Location */}
       <div className="wearable-location-block">
         <div className="loc-info">
-          <MapPin size={15} className="text-cyan" />
+          <MapPin size={15} />
           <div className="loc-text">
             <span className="loc-zone">
               {wearable.location?.zone || 'Unsurveyed Zone'}

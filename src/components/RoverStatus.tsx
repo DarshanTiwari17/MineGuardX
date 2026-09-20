@@ -59,6 +59,22 @@ export default function RoverStatus({ rover }: RoverStatusProps) {
       badge={<StatusBadge variant={connectionVariant} label={connectionLabel} />}
       testId="rover-status-card"
     >
+      <div className="widget-stats">
+        <div className="widget-stat">
+          <span className="label-caps">Battery</span>
+          <div className="stat-counter">
+            {rover.batteryLevel !== null ? rover.batteryLevel : '—'}
+            {rover.batteryLevel !== null && <span className="stat-unit">%</span>}
+          </div>
+        </div>
+        <div className="widget-stat">
+          <span className="label-caps">Signal</span>
+          <div className="stat-counter">
+            {rover.signalStrength !== null ? rover.signalStrength : '—'}
+            {rover.signalStrength !== null && <span className="stat-unit">%</span>}
+          </div>
+        </div>
+      </div>
       <DataRow label="Rover ID"          value={rover.roverId ? <span className="data-value font-mono">{rover.roverId}</span> : NA} />
       <DataRow label="Battery"           value={batteryValue} />
       <DataRow label="Current Location"  value={locationValue} />

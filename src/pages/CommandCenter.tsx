@@ -28,68 +28,79 @@ export default function CommandCenter() {
     communication,
     mission,
     systemHealth,
+    alerts,
   } = state;
 
+  const roverLinkLabel =
+    rover.connectionStatus === 'connected' ? 'Connected' :
+    rover.connectionStatus === 'connecting' ? 'Connecting' :
+    'Disconnected';
+
+  const missionLabel =
+    mission.status === 'no_mission' ? 'None' :
+    mission.status.charAt(0).toUpperCase() + mission.status.slice(1);
+
   return (
-    <div className="fade-in" aria-label="Command Center dashboard">
-      {/* Page heading */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <div>
-            <h1 className="page-title">Command Center</h1>
-            <p className="page-sub">
-              Central operational dashboard — all systems display real-time status
-            </p>
-          </div>
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '22px',
-              fontWeight: 700,
-              color: 'var(--text-secondary)',
-              letterSpacing: '0.06em',
-            }}
-            aria-live="polite"
-            aria-label="Current time"
-          >
-            <LiveClock showDate />
-          </div>
+    <div className="fade-in cc-page" aria-label="Command Center dashboard">
+      <div className="cc-hero">
+        <div>
+          <h1 className="display-headline">Command Center</h1>
+          <p className="page-sub">
+            Central operational dashboard — all systems display real-time status
+          </p>
+        </div>
+        <div
+          className="cc-hero-clock"
+          aria-live="polite"
+          aria-label="Current time"
+        >
+          <LiveClock showDate />
         </div>
       </div>
 
-      {/* ── Row 1: Rover Status + Mission Status ────────────────── */}
-      <div className="cc-row-2" style={{ marginBottom: '16px' }}>
+      <div className="cc-metric-strip">
+        <div className="cc-metric">
+          <span className="label-caps">Rover</span>
+          <span className="stat-counter">{roverLinkLabel}</span>
+        </div>
+        <div className="cc-metric">
+          <span className="label-caps">Wearables</span>
+          <span className="stat-counter">{wearables.connectedCount}</span>
+        </div>
+        <div className="cc-metric">
+          <span className="label-caps">Active Hazards</span>
+          <span className="stat-counter">{hazards.activeHazards.length}</span>
+        </div>
+        <div className="cc-metric">
+          <span className="label-caps">Alerts</span>
+          <span className="stat-counter">{alerts.activeCount}</span>
+        </div>
+        <div className="cc-metric">
+          <span className="label-caps">Mission</span>
+          <span className="stat-counter">{missionLabel}</span>
+        </div>
+      </div>
+
+      <div className="cc-primary">
         <RoverStatus rover={rover} />
         <MissionStatus mission={mission} />
       </div>
 
-      {/* ── Row 2: Mine Map (full width) ────────────────────────── */}
-      <div style={{ marginBottom: '16px' }}>
-        <MineMap />
-      </div>
+      <MineMap />
 
-      {/* ── Row 3: Camera Feed + Environment ────────────────────── */}
-      <div className="cc-row-2" style={{ marginBottom: '16px' }}>
+      <div className="cc-workspace">
         <CameraFeed />
         <EnvironmentSummary environment={environment} />
       </div>
 
-      {/* ── Row 4: Wearables | Hazards | Rescue Route ───────────── */}
-      <div className="cc-row-3" style={{ marginBottom: '16px' }}>
-        <WearableStatus wearables={wearables} />
-        <HazardPanel hazards={hazards} />
-        <RescueRoutePanel route={activeRoute} />
-      </div>
+      <EmergencyStop roverConnectionStatus={rover.connectionStatus} />
 
-      {/* ── Row 5: Communication + System Health ────────────────── */}
-      <div className="cc-row-2" style={{ marginBottom: '16px' }}>
+      <div className="cc-rail">
+        <HazardPanel hazards={hazards} />
+        <WearableStatus wearables={wearables} />
+        <RescueRoutePanel route={activeRoute} />
         <CommunicationStatus communication={communication} />
         <SystemHealth health={systemHealth} />
-      </div>
-
-      {/* ── Row 6: Emergency Stop (full width) ─────────────────── */}
-      <div style={{ marginBottom: '8px' }}>
-        <EmergencyStop roverConnectionStatus={rover.connectionStatus} />
       </div>
     </div>
   );

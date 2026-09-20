@@ -9,13 +9,15 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="app-layout">
-      <Sidebar />
-      <div className="main-content">
+      <div className="shell-chrome">
         <Header />
-        <main className="page-content" id="main-content" role="main">
-          {children}
-        </main>
+        <Sidebar />
       </div>
+      <main className="page-content" id="main-content" role="main">
+        <div className="page-shell">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

@@ -123,7 +123,7 @@ function HazardCard({ hazard, showActions }: { hazard: Hazard; showActions: bool
     <div style={{
       background: sevStyle.bg,
       border: `1px solid ${sevStyle.border}`,
-      borderRadius: '8px',
+      borderRadius: '16px',
       padding: '14px 16px',
       marginBottom: '8px',
     }}>
@@ -282,7 +282,7 @@ export default function HazardCenter() {
   });
 
   return (
-    <div className="page-container fade-in" style={{ maxWidth: '1100px' }}>
+    <div className="fade-in hz-page" style={{ maxWidth: '1100px' }}>
       {/* Header */}
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <div className="page-header-left">
@@ -322,24 +322,20 @@ export default function HazardCenter() {
 
       {/* Critical banner */}
       {criticalCount > 0 && (
-        <div style={{
-          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)',
-          borderRadius: '8px', padding: '12px 16px', marginBottom: '20px',
-          display: 'flex', alignItems: 'center', gap: '10px',
-        }}>
+        <div className="critical-banner" style={{ marginBottom: '20px' }}>
           <AlertTriangle size={18} style={{ color: '#ef4444' }} className="pulse-anim" />
-          <span style={{ color: '#ef4444', fontWeight: 700, fontSize: '13px' }}>
+          <span style={{ color: '#FCA5A5', fontWeight: 700, fontSize: '13px' }}>
             {criticalCount} CRITICAL HAZARD{criticalCount > 1 ? 'S' : ''} ACTIVE — Immediate action required
           </span>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '20px', alignItems: 'start' }}>
+      <div className="hz-layout">
         {/* Main panel */}
         <div>
           {/* Tab bar + Filters */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', gap: '4px' }}>
+            <div className="hz-tabs">
               <button
                 className={`btn ${tab === 'active' ? 'btn-primary' : 'btn-ghost'}`}
                 style={{ fontSize: '13px', padding: '6px 16px' }}
@@ -431,7 +427,7 @@ export default function HazardCenter() {
           {/* Sensor Source Status */}
           <div className="card" style={{ padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-              <Cpu size={14} style={{ color: 'var(--accent-cyan)' }} />
+              <Cpu size={14} style={{ color: 'var(--text-secondary)' }} />
               <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Detection Sources</span>
             </div>
             <SensorStatusRow label="Gas Sensors" status={sensorStatus.gasSensors} />
@@ -448,7 +444,7 @@ export default function HazardCenter() {
             <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
               Quick Navigation
             </div>
-            <Link to="/hazard-center" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-cyan)', textDecoration: 'none', fontSize: '12px', marginBottom: '6px' }}>
+            <Link to="/hazard-center" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-primary)', textDecoration: 'none', fontSize: '12px', marginBottom: '6px' }}>
               <MapPin size={12} /> View Hazard Markers on Mine Map <ExternalLink size={11} />
             </Link>
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', textDecoration: 'none', fontSize: '12px' }}>

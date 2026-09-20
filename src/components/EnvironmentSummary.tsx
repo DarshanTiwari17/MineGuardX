@@ -135,7 +135,7 @@ export default function EnvironmentSummary({ environment }: EnvironmentSummaryPr
           className="btn-link-action"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
-            fontSize: '12px', color: 'var(--accent-cyan)', textDecoration: 'none', fontWeight: 500,
+            color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500,
           }}
         >
           <span>Open Environment</span>

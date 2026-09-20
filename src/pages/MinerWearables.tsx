@@ -41,7 +41,7 @@ export default function MinerWearables() {
       <div className="page-header">
         <div className="page-header-left">
           <div className="page-title-row">
-            <Watch className="page-icon text-cyan" size={28} />
+            <Watch className="page-icon" size={28} />
             <div>
               <h1 className="page-title">Miner Wearables</h1>
               <p className="page-subtitle">
@@ -56,8 +56,8 @@ export default function MinerWearables() {
           <div className="metric-chip">
             <span className="metric-chip-label">Active Linked</span>
             <span
-              className={`metric-chip-value font-mono ${
-                onlineCount > 0 ? 'text-cyan' : 'text-muted'
+              className={`metric-chip-value ${
+                onlineCount > 0 ? 'text-primary' : 'text-muted'
               }`}
             >
               {onlineCount}
@@ -135,7 +135,7 @@ export default function MinerWearables() {
                       </span>
                     </div>
                     <div className="text-sm">
-                      <span className="text-cyan">{minerName}</span>
+                      <span>{minerName}</span>
                       {evt.confidence && <span className="ml-3 text-muted">Confidence: {Math.round(evt.confidence * 100)}%</span>}
                     </div>
                     <div className="text-sm text-muted font-mono mt-1">
@@ -202,7 +202,7 @@ export default function MinerWearables() {
                 underground base gateway.
               </p>
               <div className="empty-instructions">
-                <ShieldCheck size={16} className="text-cyan" />
+                <ShieldCheck size={16} />
                 <span>
                   Scan the Station QR code above using a miner smartphone or click{' '}
                   <strong>"Launch Mobile Wearable Client"</strong> to link a device.

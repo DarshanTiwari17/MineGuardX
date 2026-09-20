@@ -7,7 +7,6 @@
 // ============================================================
 
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import {
   Smartphone,
   Shield,
@@ -17,19 +16,18 @@ import {
   Battery,
   MapPin,
   LogOut,
-  ScanLine,
   Navigation,
   ArrowRight,
   Wind,
+  Wifi,
 } from 'lucide-react';
 import {
-  validateStationCode,
+  registerWearableDevice,
   emitWearableConnect,
   emitWearableDisconnect,
   emitWearableResolveSos,
   emitWearableHeartbeat,
   emitWearableLocationUpdate,
-  STATION_VERIFICATION_CODE,
   emitWearableEmergency,
 } from '../services/wearableBus';
 import { emitHazardEvent } from '../services/hazardBus';
@@ -38,13 +36,9 @@ import type { EnvironmentSnapshot } from '../types/sensors';
 import type { WearableMotionStatus } from '../types/wearable';
 
 export function MobileWearable() {
-  const [searchParams] = useSearchParams();
-
   // Connection state
   const [isConnected, setIsConnected] = useState(false);
-  const [pairingCode, setPairingCode] = useState(
-    searchParams.get('code') || ''
-  );
+  const [isConnecting, setIsConnecting] = useState(false);
   const [minerName, setMinerName] = useState('R. Sterling');
   const [minerId, setMinerId] = useState('MNR-4092');
   const [selectedZone, setSelectedZone] = useState('Zone C - Gallery 4');
@@ -52,16 +46,13 @@ export function MobileWearable() {
   const [posY, setPosY] = useState(115.0);
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
-  // Device telemetry state
-  const [wearableId] = useState(
-    () => `WRB-${Math.floor(1000 + Math.random() * 9000)}`
-  );
+  // Device telemetry state — persistent wearable ID from device registry
+  const [wearableId] = useState(() => registerWearableDevice());
   const [batteryLevel] = useState(94);
   const [motion, setMotion] = useState<WearableMotionStatus>('moving');
   const [heartRate, setHeartRate] = useState(76);
   const [isSosActive, setIsSosActive] = useState(false);
   const [sosConfirming, setSosConfirming] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
 
   const heartbeatTimerRef = useRef<number | null>(null);
 
@@ -135,38 +126,40 @@ export function MobileWearable() {
     };
   }, [isConnected, wearableId, batteryLevel, motion, heartRate]);
 
-  // Connect handler
+  // Connect handler — no station code required, auto-registers with backend bus
   const handleConnect = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setConnectionError(null);
+    setIsConnecting(true);
 
-    const valid = validateStationCode(pairingCode);
-    if (!valid) {
-      setConnectionError(
-        `Invalid Base Station Code. Expected verification format "${STATION_VERIFICATION_CODE}".`
-      );
-      return;
-    }
+    // Simulate brief connection handshake delay (backend registration)
+    setTimeout(() => {
+      try {
+        const timestamp = new Date().toISOString();
+        emitWearableConnect({
+          wearableId,
+          minerName: minerName.trim() || 'Field Miner',
+          minerId: minerId.trim() || 'MNR-0000',
+          batteryLevel,
+          location: {
+            x: posX,
+            y: posY,
+            zone: selectedZone,
+            lastUpdated: timestamp,
+          },
+          deviceInfo: navigator.userAgent.includes('Mobile')
+            ? 'Mobile Handheld'
+            : 'Browser Device Emulator',
+          timestamp,
+        });
 
-    const timestamp = new Date().toISOString();
-    emitWearableConnect({
-      wearableId,
-      minerName: minerName.trim() || 'Field Miner',
-      minerId: minerId.trim() || 'MNR-0000',
-      batteryLevel,
-      location: {
-        x: posX,
-        y: posY,
-        zone: selectedZone,
-        lastUpdated: timestamp,
-      },
-      deviceInfo: navigator.userAgent.includes('Mobile')
-        ? 'Mobile Handheld'
-        : 'Browser Device Emulator',
-      timestamp,
-    });
-
-    setIsConnected(true);
+        setIsConnected(true);
+      } catch {
+        setConnectionError('Connection failed. Please try again.');
+      } finally {
+        setIsConnecting(false);
+      }
+    }, 600);
   };
 
   // Disconnect handler
@@ -291,15 +284,7 @@ export function MobileWearable() {
     }
   };
 
-  // Scan simulation
-  const handleSimulateScan = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      setPairingCode(STATION_VERIFICATION_CODE);
-      setIsScanning(false);
-      setConnectionError(null);
-    }, 900);
-  };
+
 
   return (
     <div className="mobile-wearable-container">
@@ -335,7 +320,7 @@ export function MobileWearable() {
                 : 'pill-offline'
             }`}
           >
-            {isConnected ? (isSosActive ? 'EMERGENCY SOS' : 'LINKED') : 'UNPAIRED'}
+            {isConnected ? (isSosActive ? 'EMERGENCY SOS' : 'LINKED') : isConnecting ? 'CONNECTING...' : 'READY'}
           </span>
         </header>
 
@@ -348,45 +333,22 @@ export function MobileWearable() {
               <div className="pairing-icon-box">
                 <Shield size={32} className="text-cyan" />
               </div>
-              <h2>Miner Device Pairing</h2>
+              <h2>Wearable Device Setup</h2>
               <p className="pairing-desc">
-                Connect your wearable to the underground Command Center base station.
+                Connect this device as a wearable unit to the Command Center.
               </p>
             </div>
 
-            {/* Quick QR Scan Simulation */}
+            {/* Device Identity */}
             <div className="scan-trigger-box">
-              <button
-                type="button"
-                className="btn-scan-qr"
-                onClick={handleSimulateScan}
-                disabled={isScanning}
-              >
-                <ScanLine size={18} className={isScanning ? 'pulse-anim' : ''} />
-                <span>{isScanning ? 'Scanning Station QR...' : 'Scan Station QR Code'}</span>
-              </button>
-            </div>
-
-            <div className="divider-line">
-              <span>OR ENTER VERIFICATION CODE</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.15)', borderRadius: '8px' }}>
+                <Wifi size={16} className="text-cyan" />
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Device ID:</span>
+                <span className="font-mono" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-cyan, #00d4ff)' }}>{wearableId}</span>
+              </div>
             </div>
 
             <form onSubmit={handleConnect} className="pairing-form">
-              <div className="form-group">
-                <label>Base Station Verification Code</label>
-                <input
-                  type="text"
-                  className="input-code font-mono uppercase"
-                  placeholder="e.g. MINE-8421"
-                  value={pairingCode}
-                  onChange={(e) => setPairingCode(e.target.value.toUpperCase())}
-                  required
-                />
-                <span className="form-hint">
-                  Default station code: <code>MINE-8421</code>
-                </span>
-              </div>
-
               <div className="form-row-2">
                 <div className="form-group">
                   <label>Miner Name</label>
@@ -428,8 +390,8 @@ export function MobileWearable() {
                 </div>
               )}
 
-              <button type="submit" className="btn-connect-action">
-                <span>Authorize & Connect Wearable</span>
+              <button type="submit" className="btn-connect-action" disabled={isConnecting}>
+                <span>{isConnecting ? 'Connecting to Command Center...' : 'Connect Wearable'}</span>
                 <ArrowRight size={16} />
               </button>
             </form>

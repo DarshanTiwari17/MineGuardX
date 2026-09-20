@@ -18,8 +18,8 @@ const CHANNEL_NAME = 'mineguardx_wearable_bus';
 const STORAGE_EVENT_KEY = 'mineguardx_last_wearable_event';
 const STORAGE_WEARABLES_KEY = 'mineguardx_connected_wearables';
 
-// Master Rescue Station Verification Code
-export const STATION_VERIFICATION_CODE = 'MINE-8421';
+// Persistent device identity key — each browser/device stores its own wearable ID
+const DEVICE_WEARABLE_ID_KEY = 'mineguardx_device_wearable_id';
 
 let broadcastChannel: BroadcastChannel | null = null;
 try {
@@ -32,12 +32,50 @@ try {
 }
 
 /**
- * Validate Station Code entered on Mobile Wearable
+ * Generate a crypto-random 4-character uppercase hex suffix for wearable IDs.
  */
-export function validateStationCode(code: string): boolean {
-  if (!code) return false;
-  const clean = code.trim().toUpperCase();
-  return clean === STATION_VERIFICATION_CODE;
+function generateHexSuffix(): string {
+  const arr = new Uint8Array(2);
+  crypto.getRandomValues(arr);
+  return Array.from(arr)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+}
+
+/**
+ * Register or retrieve a persistent wearable device identity for this browser/device.
+ * Simulates backend-assigned identity: if this device already has an ID, reuse it.
+ * Otherwise generate a new unique WB-XXXX ID.
+ */
+export function registerWearableDevice(): string {
+  try {
+    const existing = localStorage.getItem(DEVICE_WEARABLE_ID_KEY);
+    if (existing) return existing;
+  } catch {
+    // storage unavailable
+  }
+
+  const newId = `WB-${generateHexSuffix()}`;
+
+  try {
+    localStorage.setItem(DEVICE_WEARABLE_ID_KEY, newId);
+  } catch {
+    // storage unavailable — ID will be ephemeral for this session
+  }
+
+  return newId;
+}
+
+/**
+ * Get the persistent wearable ID for this device, or null if not yet registered.
+ */
+export function getDeviceWearableId(): string | null {
+  try {
+    return localStorage.getItem(DEVICE_WEARABLE_ID_KEY);
+  } catch {
+    return null;
+  }
 }
 
 /**

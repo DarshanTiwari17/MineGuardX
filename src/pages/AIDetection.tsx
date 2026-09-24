@@ -73,12 +73,12 @@ export default function AIDetection() {
       risk_level: riskLevel
     },
     environment: {
-      temperature: environment.temperature,
-      humidity: environment.humidity,
-      oxygen: environment.oxygen,
-      carbon_monoxide: environment.carbonMonoxide,
-      methane: environment.methane,
-      carbon_dioxide: environment.carbonDioxide
+      temperature: environment.readings.temperature.value,
+      humidity: environment.readings.humidity.value,
+      oxygen: environment.readings.o2.value,
+      carbon_monoxide: environment.readings.co.value,
+      methane: environment.readings.methane.value,
+      carbon_dioxide: environment.readings.co2.value
     },
     hazards: {
       smoke: hazards.activeHazards.some(h => h.type === 'SMOKE'),
@@ -89,9 +89,9 @@ export default function AIDetection() {
       water_detected: hazards.activeHazards.some(h => h.type === 'FLOODING')
     },
     rover: {
-      battery: rover.battery,
-      speed: rover.speed,
-      position: rover.position,
+      battery: rover.batteryLevel,
+      speed: null,
+      position: rover.location,
       communication_status: rover.connectionStatus
     },
     ml_detections: cameras.detections.map(d => d.type),

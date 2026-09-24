@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Brain, AlertTriangle, ShieldCheck, Activity, CheckCircle, Navigation, Radio, Loader2, AlertCircle, Play } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import StatusCard from '../components/shared/StatusCard';
@@ -55,7 +55,7 @@ Return ONLY valid JSON matching the requested output schema.
 }`;
 
 export default function AIDetection() {
-  const { state } = useAppContext();
+  const { state, demoMode } = useAppContext();
   const { rover, environment, hazards, cameras } = state;
   
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
@@ -98,7 +98,7 @@ export default function AIDetection() {
     alerts: []
   };
 
-  const analyzeData = async () => {
+  const analyzeData = useCallback(async () => {
     setLoading(true);
     setError(null);
     setAnalysis(null);
@@ -137,7 +137,14 @@ export default function AIDetection() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [rover, environment, hazards, cameras]);
+
+  // Auto-run when demo mode is activated
+  useEffect(() => {
+    if (demoMode) {
+      analyzeData();
+    }
+  }, [demoMode, analyzeData]);
 
   const getRiskVariant = (level: string) => {
     switch (level.toUpperCase()) {

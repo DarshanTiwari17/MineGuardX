@@ -12,7 +12,7 @@ export const handler = async (event) => {
     return jsonResponse(405, { detail: 'Method not allowed.' });
   }
 
-  const apiKey = process.env.GROK_API_KEY?.trim();
+  const apiKey = process.env.GROQ_API_KEY?.trim() || process.env.GROK_API_KEY?.trim();
   if (!apiKey) {
     return jsonResponse(503, {
       detail: 'Backup analysis is not configured. Please contact support.',
@@ -35,7 +35,7 @@ export const handler = async (event) => {
   }
 
   try {
-    const grokResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+    const backupResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -43,12 +43,12 @@ export const handler = async (event) => {
       },
       body: JSON.stringify({
         ...payload,
-        model: process.env.GROK_MODEL?.trim() || 'grok-4.7',
+        model: process.env.GROQ_MODEL?.trim() || 'openai/gpt-oss-120b',
       }),
       signal: AbortSignal.timeout(25_000),
     });
 
-    const responseText = await grokResponse.text();
+    const responseText = await backupResponse.text();
     let responseBody;
     try {
       responseBody = JSON.parse(responseText);
@@ -56,13 +56,13 @@ export const handler = async (event) => {
       responseBody = {};
     }
 
-    if (!grokResponse.ok) {
+    if (!backupResponse.ok) {
       const upstreamError = responseBody.error;
       const upstreamMessage = typeof upstreamError === 'string'
         ? upstreamError
         : upstreamError?.message || responseBody.message || 'No additional details.';
       console.error('Backup analysis upstream request failed.', {
-        status: grokResponse.status,
+        status: backupResponse.status,
         message: String(upstreamMessage).slice(0, 500),
       });
       return jsonResponse(502, {

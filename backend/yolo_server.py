@@ -290,14 +290,14 @@ def analyze_with_grok(payload: dict, request: Request):
     if request.client is None or not ipaddress.ip_address(request.client.host).is_loopback:
         raise HTTPException(status_code=403, detail="AI analysis is available only to local clients.")
 
-    api_key = os.getenv("GROK_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY") or os.getenv("GROK_API_KEY")
     if not api_key:
         raise HTTPException(status_code=503, detail="Backup analysis is not configured. Please contact support.")
 
     request_payload = dict(payload)
-    request_payload["model"] = os.getenv("GROK_MODEL", "grok-4.7")
-    grok_request = urllib.request.Request(
-        "https://api.x.ai/v1/chat/completions",
+    request_payload["model"] = os.getenv("GROQ_MODEL") or "openai/gpt-oss-120b"
+    backup_request = urllib.request.Request(
+        "https://api.groq.com/openai/v1/chat/completions",
         data=json.dumps(request_payload).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
@@ -307,7 +307,7 @@ def analyze_with_grok(payload: dict, request: Request):
     )
 
     try:
-        with urllib.request.urlopen(grok_request, timeout=60) as response:
+        with urllib.request.urlopen(backup_request, timeout=60) as response:
             result = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
         raise HTTPException(status_code=502, detail="Backup analysis could not be completed. Please try again later.") from error

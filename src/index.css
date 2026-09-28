@@ -825,6 +825,72 @@ button.header-operator:hover {
   width: 100%;
 }
 
+.ai-analysis-notice {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid var(--color-critical);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-elevated);
+  color: var(--text-primary);
+}
+
+.ai-analysis-notice > svg {
+  flex: 0 0 auto;
+  color: var(--color-critical);
+}
+
+.ai-analysis-notice-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.ai-analysis-notice-content a {
+  width: fit-content;
+  color: var(--color-critical);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ai-analysis-notice-dismiss {
+  display: grid;
+  flex: 0 0 32px;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.ai-analysis-notice-dismiss:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+@media (max-width: 480px) {
+  .ai-analysis-notice {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
 .header-brand {
   display: inline-flex;
   align-items: center;

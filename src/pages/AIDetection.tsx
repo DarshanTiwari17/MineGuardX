@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Brain, AlertTriangle, ShieldCheck, Activity, CheckCircle, Navigation, Radio, Loader2, AlertCircle, Play, Users } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import StatusCard from '../components/shared/StatusCard';
@@ -6,79 +6,6 @@ import StatusBadge from '../components/shared/StatusBadge';
 import EmptyState from '../components/shared/EmptyState';
 import { yoloStore } from '../services/yoloStore';
 import type { YoloDetectionResult } from '../hooks/useYoloPoseDetection';
-
-interface Threat {
-  type: string;
-  severity: string;
-  reason: string;
-}
-
-interface Recommendation {
-  priority: string;
-  action: string;
-  reason: string;
-}
-
-interface AIAnalysis {
-  risk_level: string;
-  summary: string;
-  threats: Threat[];
-  recommendations: Recommendation[];
-  rover_action: string;
-  human_action: string;
-  monitoring_required: string[];
-  confidence: number;
-}
-
-interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: string | null } }>;
-  detail?: string;
-}
-
-async function parseAnalysisResponse(response: Response): Promise<AIAnalysis> {
-  const data = await response.json() as ChatCompletionResponse;
-  if (!response.ok) {
-    throw new Error(data.detail || `Request failed with HTTP ${response.status}.`);
-  }
-
-  const content = data.choices?.[0]?.message?.content;
-  if (typeof content !== 'string') {
-    throw new Error('AI response did not contain a completion.');
-  }
-
-  const cleaned = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
-  return JSON.parse(cleaned) as AIAnalysis;
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Unknown error.';
-}
-
-const SYSTEM_PROMPT = `You are the MineGuard-X AI safety analysis assistant.
-
-Analyze the supplied structured mine and rover data.
-
-Use ONLY the information provided.
-Never invent sensor readings, hazards, detections or events.
-Identify important safety risks and explain them clearly.
-Provide practical recommendations based on the available data.
-
-Return ONLY valid JSON matching the requested output schema.
-
-{
-  "risk_level": "LOW|MEDIUM|HIGH|CRITICAL",
-  "summary": "short explanation",
-  "threats": [
-    { "type": "...", "severity": "...", "reason": "..." }
-  ],
-  "recommendations": [
-    { "priority": "...", "action": "...", "reason": "..." }
-  ],
-  "rover_action": "CONTINUE|SLOW DOWN|STOP|RETURN_TO_BASE",
-  "human_action": "...",
-  "monitoring_required": ["..."],
-  "confidence": 0.95
-}`;
 
 /** Build a human-readable YOLO pose detection summary to pass to Qwen. */
 function buildYoloSummary(yolo: YoloDetectionResult): string {
@@ -106,14 +33,13 @@ function buildYoloSummary(yolo: YoloDetectionResult): string {
 }
 
 export default function AIDetection() {
-  const { state, demoMode, demoPhase } = useAppContext();
-  const { rover, environment, hazards, cameras } = state;
-
-  const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
-  const [analysisProvider, setAnalysisProvider] = useState<string | null>(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
-  const lastAutoRunPhaseRef = useRef<string | null>(null);
+  const {
+    aiAnalysis: analysis,
+    aiAnalysisProvider: analysisProvider,
+    aiAnalysisLoading: loading,
+    aiAnalysisError: error,
+    runAIAnalysis,
+  } = useAppContext();
 
   // ── Subscribe to latest YOLO stabilized detections ──────────────────────
   const [yoloData, setYoloData] = useState<YoloDetectionResult>(yoloStore.getLatest());
@@ -122,122 +48,7 @@ export default function AIDetection() {
     return yoloStore.subscribe((result) => setYoloData(result));
   }, []);
 
-  const hasCritical  = hazards.activeHazards.some(h => h.severity === 'critical');
-  const hasHigh      = hazards.activeHazards.some(h => h.severity === 'high');
-  const riskLevel    = hasCritical ? 'CRITICAL' : hasHigh ? 'HIGH' : hazards.activeHazards.length > 0 ? 'MEDIUM' : 'LOW';
   const anyYoloFall  = yoloData.any_fall;
-
-  const analyzeData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setAnalysis(null);
-    setAnalysisProvider(null);
-
-    // Build structured payload that Qwen receives.
-    // YOLO section is text-only summary — Qwen never sees raw camera footage.
-    const mineData = {
-      timestamp:   new Date().toISOString(),
-      mine_status: {
-        overall_status: riskLevel === 'LOW' ? 'Safe' : 'Danger',
-        risk_level:     riskLevel,
-      },
-      environment: {
-        temperature:     environment.readings.temperature.value,
-        humidity:        environment.readings.humidity.value,
-        oxygen:          environment.readings.o2.value,
-        carbon_monoxide: environment.readings.co.value,
-        methane:         environment.readings.methane.value,
-        carbon_dioxide:  environment.readings.co2.value,
-      },
-      hazards: {
-        smoke:            hazards.activeHazards.some(h => h.type === 'SMOKE'),
-        fire:             hazards.activeHazards.some(h => h.type === 'FIRE'),
-        gas_leak:         hazards.activeHazards.some(h => ['METHANE', 'CO', 'CO2'].includes(h.type)),
-        person_detected:  cameras.detections.some(d => d.type === 'person'),
-        rockfall:         hazards.activeHazards.some(h => h.type === 'ROCKFALL'),
-        water_detected:   hazards.activeHazards.some(h => h.type === 'FLOODING'),
-      },
-      rover: {
-        battery:              rover.batteryLevel,
-        speed:                null,
-        position:             rover.location,
-        communication_status: rover.connectionStatus,
-      },
-      // YOLO pose detection results (stabilized) — text summary only
-      yolo_pose_detection: buildYoloSummary(yoloData),
-      // Legacy detection types
-      ml_detections: cameras.detections.map(d => d.type),
-      alerts: [],
-    };
-
-    const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: JSON.stringify(mineData) },
-    ];
-
-    try {
-      let parsed: AIAnalysis;
-      let provider: string;
-
-      try {
-        const response = await fetch('http://localhost:11434/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ollama',
-          },
-          body: JSON.stringify({
-            model: 'qwen2.5:1.5b',
-            messages,
-            response_format: { type: 'json_object' },
-            temperature: 0.1,
-          }),
-        });
-        parsed = await parseAnalysisResponse(response);
-        provider = 'Ollama / Qwen';
-      } catch (qwenError: unknown) {
-        const grokEndpoint = import.meta.env.DEV
-          ? 'http://127.0.0.1:8765/ai/analyze'
-          : '/.netlify/functions/grok-analysis';
-        const response = await fetch(grokEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages,
-            response_format: { type: 'json_object' },
-            temperature: 0.1,
-          }),
-        });
-
-        try {
-          parsed = await parseAnalysisResponse(response);
-        } catch (grokError: unknown) {
-          throw new Error(`Qwen unavailable (${getErrorMessage(qwenError)}). Grok fallback failed (${getErrorMessage(grokError)}).`);
-        }
-        provider = 'Grok fallback';
-      }
-
-      setAnalysis(parsed);
-      setAnalysisProvider(provider);
-    } catch (err: unknown) {
-      console.error(err);
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [rover, environment, hazards, cameras, yoloData, riskLevel]);
-
-  // Run once for each demo phase so the request matches that phase's data.
-  useEffect(() => {
-    if (!demoMode || !demoPhase) {
-      lastAutoRunPhaseRef.current = null;
-      return;
-    }
-
-    if (lastAutoRunPhaseRef.current === demoPhase) return;
-    lastAutoRunPhaseRef.current = demoPhase;
-    analyzeData();
-  }, [demoMode, demoPhase, analyzeData]);
 
   const getRiskVariant = (level: string) => {
     switch (level.toUpperCase()) {
@@ -262,7 +73,7 @@ export default function AIDetection() {
           </p>
         </div>
         <button
-          onClick={analyzeData}
+          onClick={() => void runAIAnalysis()}
           disabled={loading}
           className="btn btn-primary"
         >

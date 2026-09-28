@@ -14,6 +14,7 @@ import {
   useState,
   useMemo,
   useCallback,
+  useRef,
   type ReactNode,
   type Dispatch,
 } from 'react';
@@ -66,6 +67,8 @@ import {
 import { subscribeEnvironmentEvents } from '../services/environmentBus';
 import { startThingSpeakPolling } from '../services/thingSpeakService';
 import { applyDemoOverlay, type DemoPhase } from '../demo/demoOverlay';
+import { analyzeMineData, type AIAnalysis, type AIAnalysisSnapshot } from '../services/aiAnalysisService';
+import { yoloStore } from '../services/yoloStore';
 
 import {
   INITIAL_ROVER_STATE,
@@ -1030,6 +1033,13 @@ interface AppContextValue {
   demoMode: boolean;
   demoPhase: DemoPhase | null;
   toggleDemoMode: () => void;
+  aiAnalysis: AIAnalysis | null;
+  aiAnalysisProvider: string | null;
+  aiAnalysisLoading: boolean;
+  aiAnalysisError: string | null;
+  aiAnalysisNotification: { id: number; message: string } | null;
+  runAIAnalysis: (snapshot?: AIAnalysisSnapshot, phase?: DemoPhase | null) => Promise<void>;
+  dismissAIAnalysisNotification: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -1038,10 +1048,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, INITIAL_APP_STATE);
   const [demoMode, setDemoMode] = useState(false);
   const [demoPhase, setDemoPhase] = useState<DemoPhase | null>(null);
-  const toggleDemoMode = useCallback(() => {
-    setDemoMode(!demoMode);
-    setDemoPhase(demoMode ? null : 'normal');
-  }, [demoMode]);
 
   useEffect(() => {
     if (!demoMode) return;
@@ -1058,6 +1064,64 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => applyDemoOverlay(state, demoMode ? demoPhase ?? 'normal' : 'recovered'),
     [demoMode, demoPhase, state],
   );
+  const [aiAnalysis, setAIAnalysis] = useState<AIAnalysis | null>(null);
+  const [aiAnalysisProvider, setAIAnalysisProvider] = useState<string | null>(null);
+  const [aiAnalysisLoading, setAIAnalysisLoading] = useState(false);
+  const [aiAnalysisError, setAIAnalysisError] = useState<string | null>(null);
+  const [aiAnalysisNotification, setAIAnalysisNotification] = useState<{ id: number; message: string } | null>(null);
+  const lastAutoRunPhaseRef = useRef<DemoPhase | null>(null);
+  const analysisRequestIdRef = useRef(0);
+  const toggleDemoMode = useCallback(() => {
+    const nextDemoMode = !demoMode;
+    setDemoMode(nextDemoMode);
+    setDemoPhase(nextDemoMode ? 'normal' : null);
+    if (!nextDemoMode) {
+      lastAutoRunPhaseRef.current = null;
+      analysisRequestIdRef.current += 1;
+      setAIAnalysisLoading(false);
+    }
+  }, [demoMode]);
+
+  const runAIAnalysis = useCallback(async (
+    snapshot: AIAnalysisSnapshot = displayedState,
+    phase: DemoPhase | null = null,
+  ) => {
+    const requestId = ++analysisRequestIdRef.current;
+    setAIAnalysisLoading(true);
+    setAIAnalysisError(null);
+
+    try {
+      const result = await analyzeMineData(snapshot, yoloStore.getLatest());
+      if (requestId !== analysisRequestIdRef.current) return;
+
+      setAIAnalysis(result.analysis);
+      setAIAnalysisProvider(result.provider);
+      if (phase === 'methane_alarm') {
+        setAIAnalysisNotification({
+          id: Date.now(),
+          message: 'Danger detected.',
+        });
+      }
+    } catch (error: unknown) {
+      if (requestId === analysisRequestIdRef.current) {
+        setAIAnalysisError(error instanceof Error ? error.message : 'Unknown error.');
+      }
+    } finally {
+      if (requestId === analysisRequestIdRef.current) {
+        setAIAnalysisLoading(false);
+      }
+    }
+  }, [displayedState]);
+
+  useEffect(() => {
+    if (!demoMode || !demoPhase) {
+      return;
+    }
+
+    if (lastAutoRunPhaseRef.current === demoPhase) return;
+    lastAutoRunPhaseRef.current = demoPhase;
+    void runAIAnalysis(displayedState, demoPhase);
+  }, [demoMode, demoPhase, displayedState, runAIAnalysis]);
 
   // Initial data load — currently returns disconnected states from stubs.
   // TODO: After initial load, connect WebSocket for live updates.
@@ -1198,7 +1262,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AppContext.Provider value={{ state: displayedState, dispatch, demoMode, demoPhase, toggleDemoMode }}>
+    <AppContext.Provider value={{
+      state: displayedState,
+      dispatch,
+      demoMode,
+      demoPhase,
+      toggleDemoMode,
+      aiAnalysis,
+      aiAnalysisProvider,
+      aiAnalysisLoading,
+      aiAnalysisError,
+      aiAnalysisNotification,
+      runAIAnalysis,
+      dismissAIAnalysisNotification: () => setAIAnalysisNotification(null),
+    }}>
       {children}
     </AppContext.Provider>
   );

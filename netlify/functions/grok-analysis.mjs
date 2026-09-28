@@ -15,7 +15,7 @@ export const handler = async (event) => {
   const apiKey = process.env.GROK_API_KEY?.trim();
   if (!apiKey) {
     return jsonResponse(503, {
-      detail: 'GROK_API_KEY is not configured in Netlify environment variables.',
+      detail: 'Backup analysis is not configured. Please contact support.',
     });
   }
 
@@ -57,20 +57,16 @@ export const handler = async (event) => {
     }
 
     if (!grokResponse.ok) {
-      const error = responseBody.error;
-      const message = typeof error === 'string'
-        ? error
-        : error?.message || responseBody.message || 'The Grok API rejected the request.';
       return jsonResponse(502, {
-        detail: `Grok API returned HTTP ${grokResponse.status}: ${String(message).slice(0, 500)}`,
+        detail: 'Backup analysis could not be completed. Please try again later.',
       });
     }
 
     return jsonResponse(200, responseBody);
   } catch (error) {
     const detail = error instanceof Error && error.name === 'TimeoutError'
-      ? 'Grok API request timed out.'
-      : 'Could not reach the Grok API.';
+      ? 'Backup analysis took too long. Please try again.'
+      : 'Backup analysis is unavailable. Please try again later.';
     return jsonResponse(502, { detail });
   }
 };

@@ -135,7 +135,7 @@ export const INITIAL_CAMERA_STATE: LiveMonitoringState = {
     recordedDurationSeconds: 0,
     lastSnapshotAt: null,
     status: 'unavailable',
-    statusMessage: 'Recording service unavailable — backend disconnected',
+    statusMessage: 'Recording unavailable. Check the device connection.',
   },
   thermalHotspots: [],
 };

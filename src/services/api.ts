@@ -240,7 +240,7 @@ export async function startRecording(
   // return response.json();
   return {
     success: false,
-    error: 'Recording service unavailable: rover backend not connected',
+    error: 'Recording unavailable. Check the device connection.',
   };
 }
 
@@ -253,7 +253,7 @@ export async function stopRecording(
 ): Promise<{ success: boolean; error: string }> {
   return {
     success: false,
-    error: 'Recording service unavailable: rover backend not connected',
+    error: 'Recording unavailable. Check the device connection.',
   };
 }
 
@@ -266,7 +266,7 @@ export async function captureSnapshot(
 ): Promise<{ success: boolean; error: string }> {
   return {
     success: false,
-    error: 'Snapshot capture unavailable: camera offline',
+    error: 'Snapshot unavailable. Check the camera connection.',
   };
 }
 

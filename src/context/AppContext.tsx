@@ -1061,7 +1061,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [demoMode]);
 
   const displayedState = useMemo(
-    () => applyDemoOverlay(state, demoMode ? demoPhase ?? 'normal' : 'recovered'),
+    () => (demoMode ? applyDemoOverlay(state, demoPhase ?? 'normal') : state),
     [demoMode, demoPhase, state],
   );
   const [aiAnalysis, setAIAnalysis] = useState<AIAnalysis | null>(null);

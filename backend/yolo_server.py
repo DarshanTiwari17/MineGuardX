@@ -292,7 +292,7 @@ def analyze_with_grok(payload: dict, request: Request):
 
     api_key = os.getenv("GROK_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=503, detail="GROK_API_KEY is not configured in the project .env file.")
+        raise HTTPException(status_code=503, detail="Backup analysis is not configured. Please contact support.")
 
     request_payload = dict(payload)
     request_payload["model"] = os.getenv("GROK_MODEL", "grok-4.7")
@@ -310,21 +310,9 @@ def analyze_with_grok(payload: dict, request: Request):
         with urllib.request.urlopen(grok_request, timeout=60) as response:
             result = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
-        try:
-            error_payload = json.loads(error.read().decode("utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            error_payload = {}
-        error_detail = error_payload.get("error", {})
-        if isinstance(error_detail, dict):
-            error_detail = error_detail.get("message", "")
-        if not isinstance(error_detail, str) or not error_detail:
-            error_detail = error_payload.get("message", "")
-        detail = f"Grok API returned HTTP {error.code}"
-        if isinstance(error_detail, str) and error_detail:
-            detail += f": {error_detail[:500]}"
-        raise HTTPException(status_code=502, detail=detail) from error
+        raise HTTPException(status_code=502, detail="Backup analysis could not be completed. Please try again later.") from error
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, UnicodeDecodeError) as error:
-        raise HTTPException(status_code=502, detail="Could not complete Grok AI analysis.") from error
+        raise HTTPException(status_code=502, detail="Backup analysis is unavailable. Please try again later.") from error
 
     return JSONResponse(content=result)
 

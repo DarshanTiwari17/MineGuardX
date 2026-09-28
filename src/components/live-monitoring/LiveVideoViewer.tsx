@@ -141,12 +141,7 @@ export default function LiveVideoViewer({
       ? 'NIGHT VISION OFFLINE'
       : 'NO LIVE FEED';
 
-  const offlineSubtitle =
-    activeCamera === 'thermal'
-      ? 'Awaiting long-wave infrared sensor connection'
-      : activeCamera === 'night'
-      ? 'Awaiting infrared camera night-vision stream'
-      : 'Awaiting ESP32-CAM stream connection';
+  const offlineSubtitle = 'Awaiting camera connection';
 
   const resolutionText = currentCamera?.resolution || '--';
   const fpsText =
@@ -272,12 +267,12 @@ export default function LiveVideoViewer({
               </div>
               <div className="offline-sub">
                 {loadError
-                  ? `Unable to load stream from ${rawStreamUrl}`
+                  ? 'Unable to load the camera feed.'
                   : offlineSubtitle}
               </div>
               <div className="offline-desc">
                 {loadError
-                  ? 'Ensure ESP32-CAM is powered and connected to the same LAN'
+                  ? 'Check camera power and network connection.'
                   : 'Camera not connected'}
               </div>
             </div>

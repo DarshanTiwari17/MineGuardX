@@ -19,11 +19,11 @@ interface YoloCVPanelProps {
   connectionError: string | null;
 }
 
-function ConnectionBadge({ status, error }: { status: YoloConnectionStatus; error: string | null }) {
+function ConnectionBadge({ status }: { status: YoloConnectionStatus }) {
   const label =
     status === 'connected'   ? 'AI Active'   :
     status === 'connecting'  ? 'Connecting…'   :
-    status === 'error'       ? 'Server Error'  :
+    status === 'error'       ? 'Unavailable'  :
     'Offline';
 
   const color =
@@ -39,7 +39,7 @@ function ConnectionBadge({ status, error }: { status: YoloConnectionStatus; erro
 
   return (
     <span
-      title={error ?? label}
+      title={label}
       style={{
         display:     'inline-flex',
         alignItems:  'center',
@@ -72,7 +72,7 @@ export default function YoloCVPanel({
           <Brain size={14} color="var(--color-info)" aria-hidden="true" />
           <span>AI Computer Vision Feed</span>
         </div>
-        <ConnectionBadge status={connectionStatus} error={connectionError} />
+        <ConnectionBadge status={connectionStatus} />
       </div>
 
       {/* ── Body ── */}
@@ -85,7 +85,7 @@ export default function YoloCVPanel({
               {connectionStatus === 'connecting' ? 'Connecting to AI…' : 'AI Offline'}
             </span>
             <span className="ai-empty-sub">
-              {connectionError ?? 'Start backend/yolo_server.py to enable AI detection'}
+              {connectionError ?? 'Person detection is unavailable. Check the backend connection.'}
             </span>
           </div>
         )}

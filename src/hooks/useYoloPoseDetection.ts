@@ -217,9 +217,7 @@ export function useYoloPoseDetection({
       ws.onerror = () => {
         if (!mountedRef.current) return;
         setConnectionStatus('error');
-        setError(
-          'Cannot connect to AI server (localhost:8765). Ensure backend/yolo_server.py is running.',
-        );
+        setError('Person detection is unavailable. Check the backend connection.');
       };
 
       ws.onclose = () => {

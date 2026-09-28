@@ -151,7 +151,7 @@ export default function AIDetection() {
                   <CheckCircle size={14} style={{ color: 'var(--color-connected)' }} />
                   AI Confidence: {Math.round(analysis.confidence * 100)}%
                 </span>
-                {analysisProvider && <span>Provider: {analysisProvider}</span>}
+                {analysisProvider && <span>Analysis: {analysisProvider}</span>}
               </div>
             </div>
           </StatusCard>

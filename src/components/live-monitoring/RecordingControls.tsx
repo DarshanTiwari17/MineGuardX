@@ -25,7 +25,7 @@ export default function RecordingControls({
 
   async function handleStart() {
     if (!recording.canRecord) {
-      setFeedback('Recording unavailable — rover backend disconnected');
+      setFeedback('Recording unavailable. Check the device connection.');
       return;
     }
     const res = await startRecording(activeCamera);
@@ -66,7 +66,7 @@ export default function RecordingControls({
           onClick={handleStart}
           title={
             !recording.canRecord
-              ? 'Recording unavailable — backend not connected'
+              ? 'Recording unavailable. Check the device connection.'
               : 'Start Recording'
           }
           aria-label="Start recording video"
@@ -114,7 +114,7 @@ export default function RecordingControls({
       {/* Backend Disconnection / Notice */}
       <div className="recording-notice" role="status" aria-live="polite">
         <AlertCircle size={12} aria-hidden="true" />
-        <span>{feedback || 'Recording unavailable — rover backend disconnected'}</span>
+        <span>{feedback || 'Recording unavailable. Check the device connection.'}</span>
       </div>
     </div>
   );

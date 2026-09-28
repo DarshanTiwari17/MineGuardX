@@ -160,7 +160,7 @@ export async function analyzeMineData(
         temperature: 0.1,
       }),
     });
-    return { analysis: await parseAnalysisResponse(response), provider: 'Ollama / Qwen' };
+    return { analysis: await parseAnalysisResponse(response), provider: 'Primary model' };
   } catch (qwenError: unknown) {
     const grokEndpoint = import.meta.env.DEV
       ? 'http://127.0.0.1:8765/ai/analyze'
@@ -176,9 +176,13 @@ export async function analyzeMineData(
           temperature: 0.1,
         }),
       });
-      return { analysis: await parseAnalysisResponse(response), provider: 'Grok fallback' };
+      return { analysis: await parseAnalysisResponse(response), provider: 'Backup model' };
     } catch (grokError: unknown) {
-      throw new Error(`Qwen unavailable (${getErrorMessage(qwenError)}). Grok fallback failed (${getErrorMessage(grokError)}).`);
+      console.warn('AI analysis could not complete.', {
+        primaryError: getErrorMessage(qwenError),
+        backupError: getErrorMessage(grokError),
+      });
+      throw new Error('AI analysis is temporarily unavailable. Check your connection and try again.');
     }
   }
 }

@@ -76,7 +76,7 @@ export function useBrowserCamera({
             setError('Camera is in use by another application.');
           } else {
             setPermissionStatus('unavailable');
-            setError(`Camera error: ${err.message}`);
+            setError('Camera could not be started. Check permissions or device connection.');
           }
         } else {
           setPermissionStatus('unavailable');

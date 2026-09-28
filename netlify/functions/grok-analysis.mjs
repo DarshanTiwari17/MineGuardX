@@ -57,6 +57,14 @@ export const handler = async (event) => {
     }
 
     if (!grokResponse.ok) {
+      const upstreamError = responseBody.error;
+      const upstreamMessage = typeof upstreamError === 'string'
+        ? upstreamError
+        : upstreamError?.message || responseBody.message || 'No additional details.';
+      console.error('Backup analysis upstream request failed.', {
+        status: grokResponse.status,
+        message: String(upstreamMessage).slice(0, 500),
+      });
       return jsonResponse(502, {
         detail: 'Backup analysis could not be completed. Please try again later.',
       });
@@ -64,6 +72,7 @@ export const handler = async (event) => {
 
     return jsonResponse(200, responseBody);
   } catch (error) {
+    console.error('Backup analysis request failed.', error);
     const detail = error instanceof Error && error.name === 'TimeoutError'
       ? 'Backup analysis took too long. Please try again.'
       : 'Backup analysis is unavailable. Please try again later.';

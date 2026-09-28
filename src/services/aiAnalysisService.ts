@@ -99,6 +99,23 @@ async function parseAnalysisResponse(response: Response): Promise<AIAnalysis> {
   return JSON.parse(cleaned) as AIAnalysis;
 }
 
+async function requestBackupAnalysis(messages: { role: string; content: string }[]): Promise<AIAnalysis> {
+  const endpoint = import.meta.env.DEV
+    ? 'http://127.0.0.1:8765/ai/analyze'
+    : '/.netlify/functions/grok-analysis';
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages,
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+    }),
+  });
+
+  return parseAnalysisResponse(response);
+}
+
 export async function analyzeMineData(
   snapshot: AIAnalysisSnapshot,
   yoloData: YoloDetectionResult,
@@ -146,6 +163,15 @@ export async function analyzeMineData(
     { role: 'user', content: JSON.stringify(mineData) },
   ];
 
+  if (!import.meta.env.DEV) {
+    try {
+      return { analysis: await requestBackupAnalysis(messages), provider: 'Backup model' };
+    } catch (error: unknown) {
+      console.warn('AI analysis request failed.', getErrorMessage(error));
+      throw new Error('AI analysis is temporarily unavailable. Check your connection and try again.');
+    }
+  }
+
   try {
     const response = await fetch('http://localhost:11434/v1/chat/completions', {
       method: 'POST',
@@ -162,21 +188,8 @@ export async function analyzeMineData(
     });
     return { analysis: await parseAnalysisResponse(response), provider: 'Primary model' };
   } catch (qwenError: unknown) {
-    const grokEndpoint = import.meta.env.DEV
-      ? 'http://127.0.0.1:8765/ai/analyze'
-      : '/.netlify/functions/grok-analysis';
-
     try {
-      const response = await fetch(grokEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages,
-          response_format: { type: 'json_object' },
-          temperature: 0.1,
-        }),
-      });
-      return { analysis: await parseAnalysisResponse(response), provider: 'Backup model' };
+      return { analysis: await requestBackupAnalysis(messages), provider: 'Backup model' };
     } catch (grokError: unknown) {
       console.warn('AI analysis could not complete.', {
         primaryError: getErrorMessage(qwenError),

@@ -196,7 +196,10 @@ export default function AIDetection() {
         parsed = await parseAnalysisResponse(response);
         provider = 'Ollama / Qwen';
       } catch (qwenError: unknown) {
-        const response = await fetch('http://127.0.0.1:8765/ai/analyze', {
+        const grokEndpoint = import.meta.env.DEV
+          ? 'http://127.0.0.1:8765/ai/analyze'
+          : '/.netlify/functions/grok-analysis';
+        const response = await fetch(grokEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

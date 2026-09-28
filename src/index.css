@@ -1575,18 +1575,26 @@ input:focus, select:focus, textarea:focus {
   font-weight: 600;
 }
 
+/* lm-grid: same two-column grid as Dashboard cc-workspace */
 .lm-grid {
   display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: var(--sp-4);
+  grid-template-columns: 1.55fr 1fr;
+  gap: 24px;
   align-items: start;
-  min-width: 0;
+}
+
+/* Collapse to single column on narrow viewports — same breakpoint as Dashboard */
+@media (max-width: 1100px) {
+  .lm-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .lm-main-stage {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+  min-width: 0;
 }
 
 .lm-side-stage {
@@ -1598,6 +1606,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--radius-xl);
   padding: 8px 20px 16px;
   box-shadow: var(--shadow-card);
+  min-width: 0;
 }
 .lm-side-stage .camera-status-panel,
 .lm-side-stage .ai-detection-panel,
@@ -1736,7 +1745,8 @@ input:focus, select:focus, textarea:focus {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  min-height: 380px;
+  min-height: 240px;
+  max-height: 55vh; /* keep camera within viewport so AI feed is visible beside it */
   background: #06090e;
   display: flex;
   align-items: center;
@@ -2280,11 +2290,8 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
 }
 
-@media (max-width: 1200px) {
-  .lm-grid {
-    grid-template-columns: 1fr;
-  }
-}
+
+
 
 /* ============================================================
    Feature 3: Live Mine Map Styles

@@ -17,6 +17,7 @@ import {
   BarChart2,
   FileText,
   Settings,
+  Code2,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
@@ -73,7 +74,7 @@ export default function Sidebar() {
       aria-label="Main navigation"
     >
       <div className="top-nav-track">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.slice(0, 6).map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -89,6 +90,13 @@ export default function Sidebar() {
             )}
           </NavLink>
         ))}
+        <NavLink
+          to="/development"
+          className={({ isActive }) => `nav-pill${isActive ? ' active' : ''}`}
+        >
+          <Code2 size={14} />
+          Development
+        </NavLink>
       </div>
     </nav>
   );

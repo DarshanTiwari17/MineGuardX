@@ -30,6 +30,7 @@ import {
   emitWearableLocationUpdate,
   emitWearableEmergency,
 } from '../services/wearableBus';
+import { sirenManager } from '../utils/sirenManager';
 import { emitHazardEvent } from '../services/hazardBus';
 import { emitEnvironmentUpdate, getSavedEnvironmentSnapshot } from '../services/environmentBus';
 import type { EnvironmentSnapshot } from '../types/sensors';
@@ -56,27 +57,8 @@ export function MobileWearable() {
 
   const heartbeatTimerRef = useRef<number | null>(null);
 
-  // Audio beep generator for SOS siren
-  const playSirenBeep = () => {
-    try {
-      const audioCtx = new (window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.3);
-      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.3);
-    } catch {
-      // Audio context restricted by browser
-    }
-  };
+  // We use the centralized sirenManager instead of manual AudioContext here
+  // so that the generic emergency siren audio is shared.
 
   // Clean up heartbeat on unmount or disconnect
   useEffect(() => {
@@ -175,6 +157,7 @@ export function MobileWearable() {
       setSosConfirming(true);
     } else {
       setIsSosActive(false);
+      sirenManager.stop('mobile-sos');
       emitWearableResolveSos(wearableId); // Deprecated essentially, but keeping for compatibility. Real resolution is done from dashboard.
     }
   };
@@ -182,7 +165,7 @@ export function MobileWearable() {
   const confirmSos = () => {
     setSosConfirming(false);
     setIsSosActive(true);
-    playSirenBeep();
+    sirenManager.trigger('mobile-sos');
     emitWearableEmergency(
       wearableId,
       'SOS',

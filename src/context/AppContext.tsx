@@ -65,7 +65,7 @@ import {
 
 import { subscribeEnvironmentEvents } from '../services/environmentBus';
 import { startThingSpeakPolling } from '../services/thingSpeakService';
-import { applyDemoOverlay } from '../demo/demoOverlay';
+import { applyDemoOverlay, type DemoPhase } from '../demo/demoOverlay';
 
 import {
   INITIAL_ROVER_STATE,
@@ -1028,6 +1028,7 @@ interface AppContextValue {
   state: AppState;
   dispatch: Dispatch<AppAction>;
   demoMode: boolean;
+  demoPhase: DemoPhase | null;
   toggleDemoMode: () => void;
 }
 
@@ -1036,10 +1037,26 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, INITIAL_APP_STATE);
   const [demoMode, setDemoMode] = useState(false);
-  const toggleDemoMode = useCallback(() => setDemoMode((on) => !on), []);
+  const [demoPhase, setDemoPhase] = useState<DemoPhase | null>(null);
+  const toggleDemoMode = useCallback(() => {
+    setDemoMode(!demoMode);
+    setDemoPhase(demoMode ? null : 'normal');
+  }, [demoMode]);
+
+  useEffect(() => {
+    if (!demoMode) return;
+
+    const alarmTimer = window.setTimeout(() => setDemoPhase('methane_alarm'), 30_000);
+    const recoveryTimer = window.setTimeout(() => setDemoPhase('recovered'), 55_000);
+    return () => {
+      window.clearTimeout(alarmTimer);
+      window.clearTimeout(recoveryTimer);
+    };
+  }, [demoMode]);
+
   const displayedState = useMemo(
-    () => (demoMode ? applyDemoOverlay(state) : state),
-    [demoMode, state],
+    () => applyDemoOverlay(state, demoMode ? demoPhase ?? 'normal' : 'recovered'),
+    [demoMode, demoPhase, state],
   );
 
   // Initial data load — currently returns disconnected states from stubs.
@@ -1181,7 +1198,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AppContext.Provider value={{ state: displayedState, dispatch, demoMode, toggleDemoMode }}>
+    <AppContext.Provider value={{ state: displayedState, dispatch, demoMode, demoPhase, toggleDemoMode }}>
       {children}
     </AppContext.Provider>
   );

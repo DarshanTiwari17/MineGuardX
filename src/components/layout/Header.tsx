@@ -95,10 +95,10 @@ export default function Header() {
         aria-pressed={demoMode}
       >
         <User size={14} color="var(--text-muted)" aria-hidden="true" />
-        <span className="header-operator-name">Operator</span>
+        <span className="header-operator-name">Demo</span>
         <StatusBadge
           variant={demoMode ? 'connected' : 'unavailable'}
-          label={demoMode ? 'Signed in' : 'Not signed in'}
+          label={demoMode ? 'Signed in' : 'Click here'}
         />
       </button>
     </header>
